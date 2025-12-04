@@ -3,6 +3,7 @@
     --accent-red: #ff0000;
     --text-white: #e0e0e0;
     --dim-gray: #444444;
+    --dark-gray: #111111;
     --font-gothic: 'UnifrakturMaguntia', cursive;
     --font-mono: 'Space Mono', monospace;
     --border-style: 1px solid var(--dim-gray);
@@ -46,6 +47,7 @@ body {
     80% { transform: skew(1deg); } 100% { transform: skew(0deg); }
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 /* --- SPLASH SCREEN --- */
 .splash-screen {
@@ -117,7 +119,7 @@ input[type="text"] {
     font-size: 1.1rem; text-transform: uppercase;
 }
 
-/* --- TRACK LIST (DATABASE GRID LAYOUT) --- */
+/* --- TRACK LIST --- */
 .tracklist-header {
     display: grid; 
     grid-template-columns: 50px 4fr 1fr 1fr 80px; /* ID | INFO | YR | SZ | ACT */
@@ -137,13 +139,13 @@ input[type="text"] {
 /* Grid Cell Styles */
 .track-item > div, .tracklist-header > span {
     padding: 15px 10px;
-    border-right: 1px solid #222; /* Lineas verticales tipo tabla */
+    border-right: 1px solid #222; 
     display: flex; align-items: center;
 }
 .track-item > div:last-child, .tracklist-header > span:last-child { border-right: none; }
 
 .track-item.active-track {
-    background-color: #111; border-left: 2px solid var(--accent-red);
+    background-color: #0e0e0e; border-left: 2px solid var(--accent-red);
 }
 .track-item:hover { background-color: #0a0a0a; }
 
@@ -249,45 +251,95 @@ input[type="text"] {
 .submit-btn:hover { background: var(--text-white); color: black; border-color: var(--text-white); }
 .status-msg { margin-top: 10px; font-size: 0.9rem; text-align: center; color: #f5f5f5; font-weight: bold; }
 
-/* Success Animation */
 .success-animation { text-align: center; padding: 40px 0; border: 1px solid var(--accent-red); background: rgba(255,0,0,0.05); }
 .glitch-text { font-size: 1.5rem; font-weight: bold; color: var(--accent-red); letter-spacing: 2px; animation: blink 0.2s infinite; }
 
-/* --- PLAYER (GHOST MODE) --- */
+/* --- PLAYER (OPIUM REDESIGN) --- */
 .player-container {
     position: fixed; bottom: 0; left: 0; width: 100%;
-    background: black; border-top: 2px solid var(--accent-red); z-index: 9000;
-    /* ESTADO INICIAL: OCULTO */
+    background: #000; border-top: 1px solid #333; z-index: 9000;
     transform: translateY(110%);
     transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
 }
 .player-container.visible { transform: translateY(0); }
 
-.progress-bar-container { width: 100%; height: 6px; background: #222; }
-.progress-bar { height: 100%; background: var(--accent-red); width: 0%; }
-.player-controls { display: flex; justify-content: space-between; align-items: center; padding: 20px; }
-.track-info { display: flex; flex-direction: column; width: 30%; }
-.scrolling-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; color: var(--accent-red); }
-.time-display { font-size: 0.8rem; color: var(--dim-gray); margin-top: 5px; }
+/* Progress Bar */
+.progress-bar-wrapper {
+    width: 100%; height: 8px; background: #111; position: relative; cursor: pointer;
+}
+.progress-fill {
+    height: 100%; background: var(--accent-red); width: 0%;
+    transition: width 0.1s linear; position: relative;
+}
+.progress-scrubber {
+    display: none; /* Only show on hover or specific interaction if desired, simplified for now */
+}
+.progress-bar-wrapper:hover .progress-fill {
+    box-shadow: 0 0 10px rgba(255,0,0,0.5);
+}
 
-.control-btn { background: none; border: none; color: var(--text-white); font-size: 1.2rem; margin: 0 15px; transition: color 0.1s; }
-.control-btn:hover { color: var(--accent-red); transform: scale(1.1); }
-.volume-control { display: flex; align-items: center; gap: 15px; font-size: 0.8rem; color: var(--dim-gray); }
-input[type=range] { -webkit-appearance: none; background: transparent; width: 100px; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; background: var(--text-white); margin-top: -5px; }
+/* Player Grid Layout */
+.player-grid {
+    display: grid; 
+    grid-template-columns: 2fr 1fr 2fr;
+    align-items: center; padding: 15px 30px;
+    height: 80px;
+}
+
+/* Section 1: Track Info */
+.p-info { overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.scrolling-text { 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    font-weight: bold; font-size: 1rem; color: var(--text-white);
+    letter-spacing: 1px;
+}
+.p-meta { font-size: 0.75rem; color: var(--dim-gray); margin-top: 5px; }
+.sep { margin: 0 5px; color: var(--accent-red); }
+
+/* Section 2: Controls */
+.p-controls { display: flex; justify-content: center; gap: 20px; align-items: center; }
+.ctrl-btn { 
+    background: none; border: none; color: var(--dim-gray); 
+    font-size: 1.5rem; transition: all 0.2s; line-height: 1;
+}
+.ctrl-btn:hover { color: var(--accent-red); text-shadow: 0 0 8px var(--accent-red); }
+.main-play { color: var(--text-white); font-size: 2rem; }
+.main-play:hover { transform: scale(1.1); }
+
+/* Section 3: Volume */
+.p-volume { display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
+.vol-label { font-size: 0.7rem; color: var(--accent-red); font-weight: bold; letter-spacing: 2px; }
+input[type=range] { -webkit-appearance: none; 
+    appearance: none;
+    background: transparent; width: 100px; cursor: crosshair; }
+input[type=range]::-webkit-slider-thumb { 
+    -webkit-appearance: none; height: 12px; width: 6px; 
+    background: var(--accent-red); margin-top: -5px; box-shadow: 0 0 5px var(--accent-red);
+}
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 2px; background: #333; }
 
 /* --- MOBILE OPTIMIZATION --- */
 @media (max-width: 768px) {
     .hide-mobile { display: none !important; }
-    .tracklist-header, .track-item { grid-template-columns: 40px 1fr 70px; } /* Solo ID, Info, Action */
+    
+    /* Responsive Tracklist */
+    .tracklist-header, .track-item { grid-template-columns: 40px 1fr 60px; } 
     .track-item > div:last-child { justify-content: flex-end; }
+    
     .vamp-title { font-size: 3.5rem; }
     header { justify-content: center; gap: 15px; padding: 15px; }
     .credits { flex-direction: column; align-items: flex-start; }
     .ticket-btn { width: 100%; text-align: center; }
-    .search-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .player-controls { padding: 15px 10px; }
-    .track-info { width: 50%; }
-    .buttons { flex-grow: 1; display: flex; justify-content: flex-end; }
+    
+    /* Responsive Player */
+    .player-container { padding-bottom: 5px; }
+    .player-grid { 
+        display: flex; flex-direction: column; 
+        height: auto; padding: 15px; gap: 15px;
+    }
+    .p-info { width: 100%; text-align: center; margin-bottom: 5px; }
+    .p-controls { width: 100%; justify-content: space-between; padding: 0 20px; }
+    .ctrl-btn { font-size: 1.8rem; }
+    .main-play { font-size: 2.2rem; }
 }
