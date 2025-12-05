@@ -1,9 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ==========================================
+    // 1. CONFIG & STATE
+    // ==========================================
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
     const STORAGE_KEY_COOLDOWN = 'opium_ticket_cooldown';
-    const COOLDOWN_TIME = 15 * 60 * 1000;
+    const COOLDOWN_TIME = 15 * 60 * 1000; // 15 Minutes
     
     let state = {
         lang: localStorage.getItem(STORAGE_KEY_LANG) || 'en',
@@ -14,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tracks: [] 
     };
 
+    // COMPLETE TRANSLATION DICTIONARY
     const translations = {
         en: {
             nav_home: "[HOME]", nav_about: "[ABOUT]", 
@@ -51,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ==========================================
+    // 2. DOM ELEMENTS
+    // ==========================================
     const els = {
         audio: document.getElementById('audioElement'),
         trackList: document.getElementById('trackList'),
@@ -65,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trackTitle: document.getElementById('currentTrackTitle'),
         timeCurrent: document.getElementById('currentTime'),
         timeDuration: document.getElementById('duration'),
+        // Sections
         secLeaks: document.getElementById('section-leaks'),
         secAbout: document.getElementById('section-about'),
         navHome: document.getElementById('nav-home'),
@@ -72,74 +80,77 @@ document.addEventListener('DOMContentLoaded', () => {
         langEn: document.getElementById('lang-en'),
         langEs: document.getElementById('lang-es'),
         sysClock: document.getElementById('systemClock'),
+        // Modal & Form
         openModalBtn: document.getElementById('openTicketModal'),
         closeModalBtn: document.getElementById('closeModalBtn'),
         modal: document.getElementById('ticketModal'),
         ticketForm: document.getElementById('ticketForm'),
         formStatus: document.getElementById('formStatus'),
         formMsgArea: document.getElementById('message'),
+        // Splash
         splashScreen: document.getElementById('splashScreen'),
         enterArchiveBtn: document.getElementById('enterArchiveBtn'),
         mainContent: document.getElementById('mainContent'),
         volWrapper: document.querySelector('.vol-slider-wrap')
     };
 
+    // ==========================================
+    // 3. CORE LOGIC
+    // ==========================================
+    
+    // ==========================================
+    // NUEVA LÓGICA: GITHUB API INTEGRATION
+    // ==========================================
+
     const GITHUB_API_URL = 'https://api.github.com/repos/dxdnidknow/opium-archive-vault/releases';
 
- function parseFilename(filename, uploadDateString) {
-        let raw = filename.replace(/\.(mp3|wav|m4a|flac|ogg)$/i, '').trim();
+    // Función auxiliar para parsear el nombre del archivo
+    // LÓGICA SECUENCIAL: Extrae Año, luego Info Extra (Prod/Feat), luego Artist/Title
+    function parseFilename(filename) {
+        let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '').trim();
         let year = 'N/A';
-        let extraInfo = '';
-        let artist = '';
-        let title = '';
-
-        const yearRegex = /\b(19|20)\d{2}\b/;
-        const yearMatch = raw.match(yearRegex);
+        let extraInfo = ''; // Para Productores o Feat.
         
+        // 1. Extraer Año (4 dígitos precedido por un espacio al final, ej: "Track 2021")
+        const yearMatch = raw.match(/\s(\d{4})$/);
         if (yearMatch) {
-            year = yearMatch[0];
-            raw = raw.replace(yearMatch[0], '').trim();
-        } else if (uploadDateString) {
-            const d = new Date(uploadDateString);
-            if (!isNaN(d.getTime())) {
-                year = d.getFullYear();
-            }
+            year = parseInt(yearMatch[1]);
+            // Remover el año de la cadena para el siguiente paso
+            raw = raw.substring(0, raw.lastIndexOf(yearMatch[0])).trim();
         }
-
-        const infoRegex = /[\(\[]\s*([^)\]]+)\s*[\)\]]/;
-        const infoMatch = raw.match(infoRegex);
-
+        
+        // 2. Extraer Info Extra (Texto entre paréntesis, ej: "(Prod. Pierre)")
+        // Esto debe ir al final de la cadena restante
+        const infoMatch = raw.match(/\s\(([^)]+)\)$/);
         if (infoMatch) {
-            extraInfo = infoMatch[1].trim(); 
-            raw = raw.replace(infoMatch[0], '').trim();
+            extraInfo = infoMatch[1].trim(); // Obtener el contenido dentro del paréntesis
+            // Remover el bloque de info extra de la cadena
+            raw = raw.substring(0, raw.lastIndexOf(infoMatch[0])).trim();
         }
-
-        // --- INICIO DE CORRECCIÓN: REEMPLAZAR PUNTOS POR ESPACIOS ---
-        // Esto limpia nombres como 'Playboi.Carti.-.Steeze'
-        raw = raw.replace(/\./g, ' ').trim(); 
-        // --- FIN DE CORRECCIÓN ---
-
-        raw = raw.replace(/\s+-\s*$/, '').replace(/^\s*-\s+/, '').trim();
+        
+        // 3. Extraer Artista y Título (Split por el primer " - ")
+        let artist = 'OPIUM ARCHIVE';
+        let title = raw;
 
         const splitIndex = raw.indexOf(' - ');
         if (splitIndex !== -1) {
             artist = raw.substring(0, splitIndex).trim();
             title = raw.substring(splitIndex + 3).trim();
-        } else {
-            title = raw;
-            artist = ''; 
         }
         
-        title = title.replace(/_/g, ' ').trim();
+        // Fallback: Limpieza general si el nombre original era sucio (con puntos)
+        title = title.replace(/\./g, ' ').trim();
+        artist = artist.replace(/\./g, ' ').trim();
 
         return {
             artist: artist,
             title: title,
             year: year,
-            extraInfo: extraInfo
+            extraInfo: extraInfo // Nuevo campo
         };
     }
 
+    // Convertir bytes a KB/MB/GB
     function formatBytes(bytes, decimals = 1) {
         if (!+bytes) return '0 Bytes';
         const k = 1024;
@@ -150,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSystemStatus(statusText) {
+        // Actualizar el indicador visual en la sección About
         const statusEl = document.querySelector('.status-online');
         if(statusEl) {
             statusEl.innerHTML = `<span class="beacon"></span>${statusText}`;
@@ -169,25 +181,31 @@ document.addEventListener('DOMContentLoaded', () => {
             let trackIdCounter = 1;
             let newTracks = [];
 
+            // Iterar sobre cada Release
             releases.forEach(release => {
+                // Iterar sobre cada Asset (archivo) dentro de la release
                 release.assets.forEach(asset => {
-                    if (asset.name.match(/\.(mp3|wav|m4a|flac|ogg)$/i)) {
-                        const meta = parseFilename(asset.name, asset.created_at);
+                    // Solo procesar archivos de audio
+                    if (asset.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
+                        
+                        const meta = parseFilename(asset.name);
+                        
                         newTracks.push({
                             id: trackIdCounter++,
                             title: meta.title,
                             artist: meta.artist,
-                            year: meta.year,
+                            year: meta.year, // Extraído del final
                             size: formatBytes(asset.size),
                             src: asset.browser_download_url,
                             uploadDate: asset.created_at, 
-                            extraInfo: meta.extraInfo 
+                            extraInfo: meta.extraInfo // NUEVO CAMPO DE INFO EXTRA
                         });
                     }
                 });
             });
 
             state.tracks = newTracks; 
+            
             renderTracks();
             updateSystemStatus("ONLINE // SYNCED");
 
@@ -204,18 +222,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function init() {
+        // 1. Fetch Data DIRECTLY FROM GITHUB
         await fetchGitHubReleases();
+
+        // 2. Init Config
         setLanguage(state.lang);
         if(els.volSlider) els.volSlider.value = state.volume;
         if(els.audio) els.audio.volume = state.volume;
+        
         setupModal();
         startSystemClock(); 
         setupHotkeys(); 
     }
 
+    // --- KEYBOARD CONTROLS ---
     function setupHotkeys() {
         document.addEventListener('keydown', (e) => {
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
             switch(e.code) {
                 case 'Space': e.preventDefault(); togglePlay(); break;
                 case 'ArrowLeft': e.preventDefault(); changeTrack(-1); break;
@@ -226,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- RENDER & PLAYER LOGIC ---
     function renderTracks(filterText = '') {
         if(!els.trackList) return;
         els.trackList.innerHTML = '';
@@ -250,15 +275,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const realIndex = state.tracks.findIndex(x => x.id === track.id);
             const isActive = realIndex === state.currentTrackIndex;
             
-            let displaySubtitle = 'OPIUM ARCHIVE';
-            if (track.extraInfo && track.extraInfo.length > 0) {
-                displaySubtitle = track.extraInfo;
-            } else if (track.artist && track.artist.length > 0) {
-                displaySubtitle = track.artist;
-            }
-            
-            const displayYear = track.year || '----';
-            const displaySize = track.size || '---';
+            // LÓGICA DE SUBTÍTULO: Mostrar Info Extra, o Artista si Info Extra no existe.
+            const displaySubtitle = track.extraInfo || track.artist || 'OPIUM ARCHIVE';
+            const displayYear = track.year || 'N/A';
+            const displaySize = track.size || 'N/A';
             
             const li = document.createElement('li');
             li.className = `track-item hover-trigger ${isActive ? 'active-track' : ''}`;
@@ -289,7 +309,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadTrack(index) {
         state.currentTrackIndex = index;
         const track = state.tracks[index];
+        
         els.audio.src = track.src;
+        
+        // Título del Player: Usa el artista principal + título, ignorando "OPIUM ARCHIVE" si no hay artista.
         const mainArtist = track.artist !== 'OPIUM ARCHIVE' ? track.artist : '';
         els.trackTitle.innerText = `${mainArtist ? mainArtist + ' - ' : ''}${track.title}`; 
         
@@ -305,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playPromise.then(() => {
                 updatePlayState(true);
             }).catch(error => {
+                console.log("Waiting for user interaction:", error);
                 updatePlayState(false);
             });
         }
@@ -342,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracks(els.searchInput.value); 
     }
 
+    // --- MODAL & FORM LOGIC ---
     function setupModal() {
         if(!els.openModalBtn) return;
 
@@ -409,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- UTILITIES ---
     function setLanguage(lang) {
         state.lang = lang;
         localStorage.setItem(STORAGE_KEY_LANG, lang);
@@ -453,6 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
         adjustVolume(direction * 0.05);
     }
 
+    // --- EVENT LISTENERS ---
+    
     if(els.trackList) {
         els.trackList.addEventListener('click', (e) => {
             const btn = e.target.closest('.play-trigger');
@@ -478,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(els.searchInput) els.searchInput.addEventListener('input', (e) => renderTracks(e.target.value));
 
+    // Progress Bar Logic
     if(els.audio) {
         els.audio.addEventListener('timeupdate', () => {
             if(isNaN(els.audio.duration)) return;
@@ -502,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.volWrapper.addEventListener('wheel', handleVolumeWheel, { passive: false });
     }
 
+    // Navigation Tabs
     els.navHome.addEventListener('click', (e) => { 
         e.preventDefault(); 
         els.secLeaks.classList.remove('hidden'); els.secAbout.classList.add('hidden');
@@ -521,6 +551,27 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             els.splashScreen.classList.add('hidden');
             els.mainContent.classList.remove('hidden');
+
+            // --- INICIO: FIX PARA REPRODUCCIÓN EN SAFARI (iOS) ---
+            // Esto asegura que el elemento <audio> se active al interactuar por primera vez,
+            // cumpliendo con la estricta política de reproducción de iOS/Safari.
+            if (els.audio) {
+                // 1. Forzar la carga de metadatos (ayuda a preparar el elemento)
+                els.audio.load();
+                
+                // 2. Intentar reproducir silenciado para activar el AudioContext.
+                els.audio.muted = true;
+                
+                // Intenta reproducir. La promesa puede fallar, lo cual se maneja para evitar errores en consola.
+                els.audio.play().then(() => {
+                    // Si funciona, pausa inmediatamente para no emitir sonido.
+                    els.audio.pause(); 
+                }).finally(() => { 
+                    // 3. Restaurar el estado de volumen (desmutear).
+                    els.audio.muted = false;
+                });
+            }
+            // --- FIN FIX PARA REPRODUCCIÓN EN SAFARI (iOS) ---
         });
     }
 
