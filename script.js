@@ -99,36 +99,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     
     // ==========================================
-    // NUEVA LÓGICA: GITHUB API INTEGRATION
+    // LÓGICA DE GITHUB API
     // ==========================================
 
     const GITHUB_API_URL = 'https://api.github.com/repos/dxdnidknow/opium-archive-vault/releases';
 
-    // Función auxiliar para parsear el nombre del archivo
-    // LÓGICA SECUENCIAL: Extrae Año, luego Info Extra (Prod/Feat), luego Artist/Title
+    // Función auxiliar para parsear el nombre del archivo (ROBUSTO)
     function parseFilename(filename) {
+        // 1. Limpiar extensión y trim inicial
         let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '').trim();
         let year = 'N/A';
-        let extraInfo = ''; // Para Productores o Feat.
+        let extraInfo = '';
         
-        // 1. Extraer Año (4 dígitos precedido por un espacio al final, ej: "Track 2021")
-        const yearMatch = raw.match(/\s(\d{4})$/);
+        // --- 1. Extraer y remover AÑO (4 dígitos al final, precedido por espacio) ---
+        const yearRegex = /\s(\d{4})$/;
+        const yearMatch = raw.match(yearRegex);
         if (yearMatch) {
             year = parseInt(yearMatch[1]);
-            // Remover el año de la cadena para el siguiente paso
-            raw = raw.substring(0, raw.lastIndexOf(yearMatch[0])).trim();
+            raw = raw.replace(yearRegex, '').trim();
         }
         
-        // 2. Extraer Info Extra (Texto entre paréntesis, ej: "(Prod. Pierre)")
-        // Esto debe ir al final de la cadena restante
-        const infoMatch = raw.match(/\s\(([^)]+)\)$/);
+        // --- 2. Extraer y remover INFO EXTRA (texto en paréntesis al final) ---
+        const infoRegex = /\s\(([^)]+)\)$/;
+        const infoMatch = raw.match(infoRegex);
         if (infoMatch) {
-            extraInfo = infoMatch[1].trim(); // Obtener el contenido dentro del paréntesis
-            // Remover el bloque de info extra de la cadena
-            raw = raw.substring(0, raw.lastIndexOf(infoMatch[0])).trim();
+            extraInfo = infoMatch[1].trim(); 
+            raw = raw.replace(infoRegex, '').trim();
         }
         
-        // 3. Extraer Artista y Título (Split por el primer " - ")
+        // --- 3. Extraer Artista y Título (Split por el primer " - ") ---
         let artist = 'OPIUM ARCHIVE';
         let title = raw;
 
@@ -138,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title = raw.substring(splitIndex + 3).trim();
         }
         
-        // Fallback: Limpieza general si el nombre original era sucio (con puntos)
+        // Limpieza final de puntos y espacios
         title = title.replace(/\./g, ' ').trim();
         artist = artist.replace(/\./g, ' ').trim();
 
@@ -146,10 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
             artist: artist,
             title: title,
             year: year,
-            extraInfo: extraInfo // Nuevo campo
+            extraInfo: extraInfo 
         };
     }
-
+    
     // Convertir bytes a KB/MB/GB
     function formatBytes(bytes, decimals = 1) {
         if (!+bytes) return '0 Bytes';
@@ -306,13 +305,15 @@ document.addEventListener('DOMContentLoaded', () => {
         els.trackList.appendChild(fragment);
     }
 
-    function loadTrack(index) {
+function loadTrack(index) {
         state.currentTrackIndex = index;
         const track = state.tracks[index];
         
+        // 1. Set source and FORCE load metadata (FIX DOBLE CLICK)
         els.audio.src = track.src;
+        els.audio.load(); // Fuerza la carga para que el siguiente 'play()' tenga más éxito
         
-        // Título del Player: Usa el artista principal + título, ignorando "OPIUM ARCHIVE" si no hay artista.
+        // 2. Update player title 
         const mainArtist = track.artist !== 'OPIUM ARCHIVE' ? track.artist : '';
         els.trackTitle.innerText = `${mainArtist ? mainArtist + ' - ' : ''}${track.title}`; 
         
@@ -321,15 +322,25 @@ document.addEventListener('DOMContentLoaded', () => {
             els.playerContainer.classList.add('visible');
         }
 
+        // 3. Re-render list to show active track and playing/pause icon
         renderTracks(els.searchInput.value); 
         
+        // 4. Attempt to play (HANDLE AbortError)
         const playPromise = els.audio.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 updatePlayState(true);
             }).catch(error => {
-                console.log("Waiting for user interaction:", error);
-                updatePlayState(false);
+                // IGNORAR AbortError - Ocurre cuando se cambia el 'src' e inmediatamente se llama a 'play()'
+                if (error.name === "AbortError") {
+                    console.warn("Play request aborted (Expected behavior when changing tracks). Forcing visual state to PLAY.");
+                    // Forzamos el estado visual a PLAY, ya que el usuario hizo clic
+                    updatePlayState(true);
+                } else {
+                    // Si es otro error, lo mostramos
+                    console.error("Autoplay failed:", error);
+                    updatePlayState(true);
+                }
             });
         }
     }
