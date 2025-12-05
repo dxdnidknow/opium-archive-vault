@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OPIUM ARCHIVE // THE VAULT - Unreleased Music Leaks</title>
     <meta name="google-site-verification" content="UaMQm8wc66detzd8SkrNukDiQJhjMY9v1kelKwULc8M" />
     <meta name="description" content="THE VAULT es un archivo digital de música inédita y rarezas del colectivo OPIUM. Acceso directo a leaks y material exclusivo.">
@@ -12,19 +12,16 @@
     <meta property="og:image" content="https://opium-archive-vault.vercel.app/assets/og-image.jpg"> 
     <meta property="og:url" content="https://opium-archive-vault.vercel.app/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#050505">
-
+    <meta name="theme-color" content="#000000">
     <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
     <div class="noise-overlay"></div>
     <div class="scanlines"></div>
     
@@ -38,11 +35,11 @@
             <div class="logo-wrapper">
                 <div class="logo glitch" data-text="OPIUM">OPIUM</div>
             </div>
-            <nav>
+            <nav class="main-nav">
                 <a href="#" id="nav-home" class="nav-link active hover-trigger" data-i18n="nav_home">[HOME]</a>
                 <a href="#" id="nav-about" class="nav-link hover-trigger" data-i18n="nav_about">[ABOUT]</a>
                 
-                <div class="lang-switch">
+                <div class="lang-switch-container">
                     <span id="lang-en" class="lang-opt active hover-trigger">EN</span>
                     <span class="separator">/</span>
                     <span id="lang-es" class="lang-opt hover-trigger">ES</span>
@@ -72,7 +69,7 @@
                 </div>
 
                 <ul id="trackList" class="track-list">
-                    </ul>
+                </ul>
             </div>
 
             <div id="section-about" class="content-section hidden">
@@ -136,7 +133,7 @@
 
                         <div class="form-group">
                             <label for="message" data-i18n="form_msg">MESSAGE / LINK *</label>
-                            <textarea name="message" id="message" rows="4" class="hover-trigger" required placeholder="Paste links here..."></textarea>
+                            <textarea name="message" id="message" rows="4" class="hover-trigger" required></textarea>
                         </div>
 
                         <button type="submit" class="submit-btn hover-trigger">
@@ -152,7 +149,6 @@
             <div class="progress-bar-wrapper hover-trigger" id="progressContainer">
                 <div class="progress-bg"></div>
                 <div class="progress-fill" id="progressBar"></div>
-                <div class="progress-scrubber" id="progressScrubber"></div>
             </div>
             
             <div class="player-grid">
@@ -177,7 +173,7 @@
                 </div>
             </div>
             
-            <audio id="audioElement"></audio>
+            <audio id="audioElement" preload="metadata"></audio>
         </div>
     </div>
 

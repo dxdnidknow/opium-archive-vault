@@ -1,0 +1,21 @@
+{
+  "name": "opium-archive-vault",
+  "version": "3.0.0",
+  "description": "Unreleased Audio Archive - Frontend & Asset Management",
+  "main": "script.js",
+  "scripts": {
+
+    "start": "live-server"
+  },
+  "keywords": [
+    "opium",
+    "archive",
+    "audio",
+    "leaks"
+  ],
+  "author": "dxnidknow",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+}
+}
