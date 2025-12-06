@@ -601,7 +601,45 @@ document.addEventListener('DOMContentLoaded', () => {
     
     els.langEn.addEventListener('click', () => setLang('en'));
     els.langEs.addEventListener('click', () => setLang('es'));
+// --- INPUT VALIDATION SYSTEM ---
+    function initInputValidation() {
+        const inputs = [
+            { id: 'alias', min: 4, max: 20, status: document.getElementById('aliasStatus') },
+            { id: 'message', min: 20, max: 400, status: document.getElementById('msgStatus') }
+        ];
 
+        inputs.forEach(field => {
+            const el = document.getElementById(field.id);
+            if (!el) return;
+
+            el.addEventListener('input', () => {
+                const len = el.value.length;
+                const remaining = field.max - len;
+                
+                // Actualizar texto
+                field.status.innerText = `> LEN: ${len} / ${field.max}`;
+
+                // Validar longitud mínima visualmente
+                if (len > 0 && len < field.min) {
+                    field.status.innerText += ` [MIN: ${field.min}]`;
+                    field.status.classList.add('invalid');
+                    field.status.classList.remove('valid');
+                    el.style.borderColor = 'var(--accent-red)';
+                } else if (len >= field.min) {
+                    field.status.classList.remove('invalid');
+                    field.status.classList.add('valid');
+                    el.style.borderColor = '#333'; // Reset border
+                } else {
+                    // Estado vacío
+                    field.status.classList.remove('invalid', 'valid');
+                    el.style.borderColor = '#333';
+                }
+            });
+        });
+    }
+
+    // LLAMADA INICIAL (Insertar esto justo antes de cerrar el DOMContentLoaded)
+    initInputValidation();
     // --- APP INIT ---
     els.enterArchiveBtn.addEventListener('click', () => {
         els.splashScreen.style.opacity = '0';

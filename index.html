@@ -139,15 +139,18 @@
                 <div class="modal-body">
                     <form id="ticketForm" action="https://formspree.io/f/xwpgbgaz" method="POST" class="glitch-form">
                         <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-
-                        <div class="form-group">
+<div class="form-group">
                             <label for="alias" data-i18n="form_alias">ALIAS / CODENAME *</label>
-                            <input type="text" name="alias" id="alias" class="hover-trigger" required autocomplete="off">
+                            <input type="text" name="alias" id="alias" class="hover-trigger" required autocomplete="off" minlength="4" maxlength="20">
+                            <!-- NUEVO INDICADOR DE ESTADO -->
+                            <div id="aliasStatus" class="input-status">> REQ: 4 - 20 CHARS</div>
                         </div>
 
                         <div class="form-group">
                             <label for="message" data-i18n="form_msg">MESSAGE / LINK *</label>
-                            <textarea name="message" id="message" rows="4" class="hover-trigger" required></textarea>
+                            <textarea name="message" id="message" rows="4" class="hover-trigger" required minlength="20" maxlength="400"></textarea>
+                            <!-- NUEVO INDICADOR DE ESTADO -->
+                            <div id="msgStatus" class="input-status">> REQ: 20 - 400 CHARS</div>
                         </div>
 
                         <!-- GATEKEEPER: RECAPTCHA -->
