@@ -45,7 +45,7 @@ body {
 
 .noise-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: url('https://grainy-gradients.vercel.app/noise.svg');
+    background: #050505 url('https://grainy-gradients.vercel.app/noise.svg');
     opacity: 0.06;
     pointer-events: none; 
     z-index: 990;
@@ -157,7 +157,7 @@ nav.main-nav { display: flex; gap: 30px; align-items: center; }
     color: var(--text-white); margin-bottom: 20px; user-select: none;
     letter-spacing: -2px;
 }
-.glitch-text:hover { animation: glitch-skew 0.3s infinite; color: var(--accent-red); }
+.glitch-text:hover { animation: glitch-skew 0.3s infinite; color: var(--accent-red); will-change: transform; }
 
 .subtitle { 
     color: var(--dim-gray); letter-spacing: 4px; font-size: 0.8rem; 
@@ -195,6 +195,8 @@ input[type="text"] {
     letter-spacing: 1px; text-transform: uppercase;
 }
 .tracklist-header > span { padding: 0 15px; }
+
+.track-list { list-style: none; }
 
 .track-item {
     display: grid; 
@@ -336,12 +338,25 @@ input[type="text"] {
 .submit-btn:hover:not(:disabled) { background: var(--text-white); color: black; border-color: var(--text-white); }
 .status-msg { margin-top: 15px; font-size: 0.8rem; text-align: center; color: var(--accent-red); }
 
+/* SUCCESS VIEW STYLES */
+.success-view {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.success-icon {
+    font-size: 3rem; color: #00ff00; border: 2px solid #00ff00; 
+    width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; margin-bottom: 15px; text-shadow: 0 0 10px #00ff00;
+}
+.success-text { color: #00ff00; font-weight: bold; letter-spacing: 2px; }
+
 .player-container {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #000; border-top: 2px solid #1a1a1a; z-index: 9000;
     transform: translateY(110%);
     transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     box-shadow: 0 -10px 30px rgba(0,0,0,0.9);
+    will-change: transform;
 }
 .player-container.visible { transform: translateY(0); }
 

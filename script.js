@@ -37,13 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
             form_sent: "/// TRANSMISSION SENT ///", 
             form_cd: "/// SYSTEM COOLDOWN ///", 
             form_sending: "TRANSMITTING...", form_error: "> SYSTEM ERROR",
-            form_ph: "PASTE LINKS HERE..."
+            form_ph: "PASTE LINKS HERE...",
+            form_captcha_err: "> VERIFICATION FAILED"
         },
         es: {
             nav_home: "[INICIO]", nav_about: "[ACERCA]", 
             hero_title: "LA BÓVEDA", hero_subtitle: "/// ARCHIVO DE AUDIO INÉDITO V.3.0",
             search_prompt: "> BÚSQUEDA:", search_placeholder: "BUSCAR...", 
-            col_track: "NOMBRE PISTA", col_year: "AÑO", col_size: "PESO", col_action: "CMD",
+            col_track: "NOMBRE PISTA", col_year: "AÑO", col_size: "TAMAÑO", col_action: "CMD",
             about_title: "/// MANIFIESTO DEL PROYECTO", 
             about_p1: "SANTUARIO DIGITAL PARA LA PRESERVACIÓN DE ARTEFACTOS AUDITIVOS DE LA ERA OPIUM.", 
             about_p2: "NO POSEEMOS LOS DERECHOS DE ESTAS GRABACIONES. ESTA ES UNA INICIATIVA DE FANS SIN FINES DE LUCRO.",
@@ -51,11 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
             intro_btn: "[ INICIAR SISTEMA ]",
             player_idle: "SIN SEÑAL ACTIVA", vol_label: "VOL", 
             no_results: "NO SE ENCONTRARON DATOS...",
-            form_alias: "ALIAS / CODIGO *", form_msg: "MENSAJE / ENLACE *", form_send: "[ ENVIAR DATOS ]",
+            form_alias: "ALIAS / CÓDIGO *", form_msg: "MENSAJE / ENLACE *", form_send: "[ ENVIAR DATOS ]",
             form_sent: "/// TRANSMISIÓN ENVIADA ///", 
             form_cd: "/// ENFRIAMIENTO DE SISTEMA ///",
             form_sending: "TRANSMITIENDO...", form_error: "> ERROR DEL SISTEMA",
-            form_ph: "PEGAR ENLACES AQUÍ..."
+            form_ph: "PEGAR ENLACES AQUÍ...",
+            form_captcha_err: "> VERIFICACIÓN FALLIDA"
         }
     };
 
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prevBtn: document.getElementById('prevBtn'),
         nextBtn: document.getElementById('nextBtn'),
         volSlider: document.getElementById('volumeSlider'),
+        volContainer: document.querySelector('.p-volume'), // Added container ref
         progressBar: document.getElementById('progressBar'),
         progressContainer: document.getElementById('progressContainer'),
         searchInput: document.getElementById('searchInput'),
@@ -90,6 +93,19 @@ document.addEventListener('DOMContentLoaded', () => {
         splashScreen: document.getElementById('splashScreen'),
         enterArchiveBtn: document.getElementById('enterArchiveBtn'),
         mainContent: document.getElementById('mainContent')
+    };
+
+    // UTILS
+    const debounce = (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     };
     
     function parseFilename(filename) {
@@ -155,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSubmitButtonState() {
-        if(!els.ticketSubmitBtn) return; // Seguridad si el HTML no ha cargado
+        if(!els.ticketSubmitBtn) return; 
         
         const cooldown = checkCooldown();
         const btnText = els.ticketSubmitBtn.querySelector('.btn-text');
@@ -196,21 +212,25 @@ document.addEventListener('DOMContentLoaded', () => {
             let trackId = 1;
             let tracks = [];
 
-            releases.forEach(release => {
-                release.assets.forEach(asset => {
-                    if (asset.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
-                        const meta = parseFilename(asset.name);
-                        tracks.push({
-                            id: trackId++,
-                            title: meta.title,
-                            artist: meta.artist,
-                            year: meta.year,
-                            size: formatBytes(asset.size),
-                            src: asset.browser_download_url.replace('http:', 'https:') 
+            if (Array.isArray(releases)) {
+                releases.forEach(release => {
+                    if (release.assets && Array.isArray(release.assets)) {
+                        release.assets.forEach(asset => {
+                            if (asset.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
+                                const meta = parseFilename(asset.name);
+                                tracks.push({
+                                    id: trackId++,
+                                    title: meta.title,
+                                    artist: meta.artist,
+                                    year: meta.year,
+                                    size: formatBytes(asset.size),
+                                    src: asset.browser_download_url.replace('http:', 'https:') 
+                                });
+                            }
                         });
                     }
                 });
-            });
+            }
 
             state.tracks = tracks;
             localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify({ timestamp: Date.now(), data: tracks }));
@@ -244,15 +264,66 @@ document.addEventListener('DOMContentLoaded', () => {
             const isActive = realIndex === state.currentTrackIndex;
             const li = document.createElement('li');
             li.className = `track-item hover-trigger ${isActive ? 'active-track' : ''}`;
-            li.innerHTML = `
-                <div class="t-id">${isActive ? '<span class="playing-indicator"></span>' : `<span class="index-num">${track.id < 10 ? '0'+track.id : track.id}</span>`}</div>
-                <div class="t-info"><span class="t-title">${track.title}</span><span class="t-artist">${track.artist}</span></div>
-                <div class="t-meta hide-mobile">${track.year}</div>
-                <div class="t-meta hide-mobile">${track.size}</div>
-                <div class="col-actions">
-                    <button class="icon-btn play-trigger" data-index="${realIndex}">${isActive && state.isPlaying ? '❚❚' : '▶'}</button>
-                    <a href="${track.src}" download class="icon-btn" target="_blank">↓</a>
-                </div>`;
+            
+            // SECURITY: Using DOM creation instead of InnerHTML to prevent XSS
+            
+            // ID Column
+            const divId = document.createElement('div');
+            divId.className = 't-id';
+            if (isActive) {
+                divId.innerHTML = '<span class="playing-indicator"></span>';
+            } else {
+                const idxSpan = document.createElement('span');
+                idxSpan.className = 'index-num';
+                idxSpan.textContent = track.id < 10 ? '0'+track.id : track.id;
+                divId.appendChild(idxSpan);
+            }
+            li.appendChild(divId);
+
+            // Info Column
+            const divInfo = document.createElement('div');
+            divInfo.className = 't-info';
+            const spanTitle = document.createElement('span');
+            spanTitle.className = 't-title';
+            spanTitle.textContent = track.title;
+            const spanArtist = document.createElement('span');
+            spanArtist.className = 't-artist';
+            spanArtist.textContent = track.artist;
+            divInfo.appendChild(spanTitle);
+            divInfo.appendChild(spanArtist);
+            li.appendChild(divInfo);
+
+            // Meta Columns
+            const divYear = document.createElement('div');
+            divYear.className = 't-meta hide-mobile';
+            divYear.textContent = track.year;
+            li.appendChild(divYear);
+
+            const divSize = document.createElement('div');
+            divSize.className = 't-meta hide-mobile';
+            divSize.textContent = track.size;
+            li.appendChild(divSize);
+
+            // Actions Column
+            const divActions = document.createElement('div');
+            divActions.className = 'col-actions';
+            
+            const btnPlay = document.createElement('button');
+            btnPlay.className = 'icon-btn play-trigger';
+            btnPlay.dataset.index = realIndex;
+            btnPlay.textContent = isActive && state.isPlaying ? '❚❚' : '▶';
+            
+            const btnDown = document.createElement('a');
+            btnDown.href = track.src;
+            btnDown.className = 'icon-btn';
+            btnDown.target = '_blank';
+            btnDown.textContent = '↓';
+            btnDown.download = '';
+
+            divActions.appendChild(btnPlay);
+            divActions.appendChild(btnDown);
+            li.appendChild(divActions);
+
             frag.appendChild(li);
         });
         els.trackList.appendChild(frag);
@@ -306,15 +377,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracks(els.searchInput.value); 
     }
 
-    // --- EVENTS ---
-    els.audio.addEventListener('timeupdate', () => {
-        if(isNaN(els.audio.duration)) return;
-        const pct = (els.audio.currentTime / els.audio.duration) * 100;
-        els.progressBar.style.width = `${pct}%`;
-        els.timeCurrent.innerText = formatTime(els.audio.currentTime);
-        els.timeDuration.innerText = formatTime(els.audio.duration);
-    });
-    
+    // --- EVENTS & CONTROL LOGIC ---
+
+    // 1. PLAYBACK END/ERROR
     els.audio.addEventListener('ended', () => {
         if(state.currentTrackIndex === -1) return;
         loadTrack(state.currentTrackIndex + 1)
@@ -326,18 +391,114 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 2. BUTTONS
     els.playBtn.addEventListener('click', togglePlay);
     els.nextBtn.addEventListener('click', () => loadTrack(state.currentTrackIndex + 1));
     els.prevBtn.addEventListener('click', () => loadTrack(state.currentTrackIndex - 1));
-    
+
+    // 3. VOLUME CONTROL (INPUT + SCROLL WHEEL)
     if(els.volSlider) {
+        // Standard Slider Input
         els.volSlider.addEventListener('input', (e) => {
-            els.audio.volume = parseFloat(e.target.value);
-            localStorage.setItem(STORAGE_KEY_VOL, els.audio.volume);
+            const val = parseFloat(e.target.value);
+            els.audio.volume = val;
+            state.volume = val; // Sync State
+            localStorage.setItem(STORAGE_KEY_VOL, val);
         });
+        // Initial State
         els.volSlider.value = state.volume;
         els.audio.volume = state.volume;
     }
+
+    // Scroll Wheel Override for Volume
+    if (els.volContainer) {
+        els.volContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const step = 0.05;
+            let newVol = els.audio.volume;
+
+            if (e.deltaY < 0) { // Scrolling Up
+                newVol = Math.min(newVol + step, 1);
+            } else { // Scrolling Down
+                newVol = Math.max(newVol - step, 0);
+            }
+
+            els.audio.volume = newVol;
+            if(els.volSlider) els.volSlider.value = newVol;
+            state.volume = newVol;
+            localStorage.setItem(STORAGE_KEY_VOL, newVol);
+        }, { passive: false });
+    }
+
+    // 4. SCRUBBING SYSTEM (DRAG & DROP)
+    let isDragging = false;
+
+    // Time Update (Visual Only if NOT Dragging)
+    els.audio.addEventListener('timeupdate', () => {
+        if (!isDragging && !isNaN(els.audio.duration)) {
+            const pct = (els.audio.currentTime / els.audio.duration) * 100;
+            els.progressBar.style.width = `${pct}%`;
+            els.timeCurrent.innerText = formatTime(els.audio.currentTime);
+            els.timeDuration.innerText = formatTime(els.audio.duration);
+        }
+    });
+
+    // Helper to calculate position
+    const updateScrub = (clientX) => {
+        if (isNaN(els.audio.duration)) return;
+        const rect = els.progressContainer.getBoundingClientRect();
+        // Limit pos between 0 and 1
+        let pos = (clientX - rect.left) / rect.width;
+        pos = Math.max(0, Math.min(1, pos));
+        
+        // Immediate visual update
+        els.progressBar.style.width = `${pos * 100}%`;
+        els.timeCurrent.innerText = formatTime(pos * els.audio.duration);
+        
+        return pos * els.audio.duration;
+    };
+
+    // MOUSE EVENTS
+    els.progressContainer.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateScrub(e.clientX);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            e.preventDefault(); 
+            updateScrub(e.clientX);
+        }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        if (isDragging) {
+            const newTime = updateScrub(e.clientX);
+            if(newTime !== undefined) els.audio.currentTime = newTime;
+            isDragging = false;
+        }
+    });
+
+    // TOUCH EVENTS (Mobile Scrubbing)
+    els.progressContainer.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        updateScrub(e.touches[0].clientX);
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault(); // Prevent scroll while seeking
+            updateScrub(e.touches[0].clientX);
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', (e) => {
+        if (isDragging) {
+            const newTime = updateScrub(e.changedTouches[0].clientX);
+            if(newTime !== undefined) els.audio.currentTime = newTime;
+            isDragging = false;
+        }
+    });
 
     if(els.trackList) {
         els.trackList.addEventListener('click', (e) => {
@@ -349,14 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    els.progressContainer.addEventListener('click', (e) => {
-        if(!els.audio.src || isNaN(els.audio.duration)) return;
-        const rect = els.progressContainer.getBoundingClientRect();
-        const pos = (e.clientX - rect.left) / rect.width;
-        els.audio.currentTime = pos * els.audio.duration;
-    });
-
-    els.searchInput.addEventListener('input', (e) => renderTracks(e.target.value));
+    // PERFORMANCE: DEBOUNCE SEARCH
+    els.searchInput.addEventListener('input', debounce((e) => {
+        renderTracks(e.target.value);
+    }, 300));
 
     // --- NAVIGATION & LANG ---
     function switchSection(sec) {
@@ -427,6 +584,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(checkCooldown().active) return;
 
+        // VERIFY CAPTCHA
+        const captchaResponse = grecaptcha.getResponse();
+        if(captchaResponse.length === 0) {
+             els.formStatus.innerText = translations[state.lang].form_captcha_err;
+             return;
+        }
+
         const btnText = els.ticketSubmitBtn.querySelector('.btn-text');
         const originalText = translations[state.lang].form_send;
         
@@ -435,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.formStatus.innerText = "";
         
         const formData = new FormData(els.ticketForm);
+        // Ensure recaptcha response is included (Formspree checks 'g-recaptcha-response')
         const jsonData = Object.fromEntries(formData.entries());
         
         try {
@@ -453,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.ticketForm.style.display = 'none';
                 els.successView.style.display = 'flex';
                 els.ticketForm.reset();
+                grecaptcha.reset(); // Reset captcha for next use
 
                 setTimeout(() => {
                     els.modal.classList.remove('open');
@@ -464,12 +630,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.formStatus.innerText = data.errors ? data.errors.map(err => err.message).join(", ") : "ACCESS DENIED";
                 els.ticketSubmitBtn.disabled = false;
                 btnText.innerText = originalText;
+                grecaptcha.reset();
             }
         } catch (error) {
             console.error("Network Error:", error);
             els.formStatus.innerText = translations[state.lang].form_error;
             els.ticketSubmitBtn.disabled = false;
             btnText.innerText = originalText;
+            grecaptcha.reset();
         }
     });
 

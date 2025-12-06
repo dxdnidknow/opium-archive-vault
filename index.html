@@ -19,6 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     
+    <!-- GOOGLE RECAPTCHA API -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -126,7 +129,6 @@
 
         </main>
 
-        <!-- MODAL TICKET FORM (CORREGIDO CON NUEVOS IDs) -->
         <div id="ticketModal" class="modal-overlay hidden">
             <div class="modal-terminal">
                 <div class="modal-header">
@@ -135,7 +137,6 @@
                 </div>
                 
                 <div class="modal-body">
-                    <!-- VISTA FORMULARIO -->
                     <form id="ticketForm" action="https://formspree.io/f/xwpgbgaz" method="POST" class="glitch-form">
                         <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
 
@@ -149,15 +150,18 @@
                             <textarea name="message" id="message" rows="4" class="hover-trigger" required></textarea>
                         </div>
 
-                        <!-- ID AGREGADO AQUI: ticketSubmitBtn -->
+                        <!-- GATEKEEPER: RECAPTCHA -->
+                        <div class="form-group" style="display: flex; justify-content: center;">
+                            <div class="g-recaptcha" data-sitekey="6LdgxiIsAAAAAKeYYtq_jvOyiy7MzlsaI3A1QyfT" data-theme="dark"></div>
+                        </div>
+
                         <button type="submit" id="ticketSubmitBtn" class="submit-btn hover-trigger">
                             <span class="btn-text" data-i18n="form_send">[ SEND DATA ]</span>
                         </button>
                         <p id="formStatus" class="status-msg"></p> 
                     </form>
 
-                    <!-- VISTA EXITO AGREGADA AQUI: successView -->
-                    <div id="successView" class="success-view">
+                    <div id="successView" class="success-view" style="display:none;">
                         <div class="success-icon">✓</div>
                         <div class="success-text">/// DATA UPLOADED ///</div>
                         <p style="margin-top:10px; font-size: 0.7rem; color: #666;">CONNECTION TERMINATED.</p>
