@@ -230,8 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- DATA LOADING (CDN MODE) ---
-// --- DATA LOADING (CDN MODE - PATH FIXED) ---
+ // --- DATA LOADING (GITHUB PAGES MODE - IOS FIXED) ---
     async function loadData() {
         const cachedRaw = localStorage.getItem(STORAGE_KEY_CACHE);
         
@@ -253,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         */
 
         try {
-            // CORRECCIÓN 1: La ruta API ahora apunta a 'contents/leaks'
+            // API: Consulta la estructura de archivos
             const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/contents/contents/leaks');
             
             if (!res.ok) {
@@ -270,8 +269,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (file.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
                         const meta = parseFilename(file.name);
                         
-                        // CORRECCIÓN 2: La ruta CDN también apunta a 'contents/leaks'
-                        const cdnUrl = `https://cdn.jsdelivr.net/gh/dxdnidknow/opium-archive-vault/contents/leaks/${encodeURIComponent(file.name)}`;
+                        // CORRECCIÓN FINAL: Usar GitHub Pages como servidor de streaming
+                        // Esto evita el bloqueo de privacidad de Apple
+                        const audioUrl = `https://dxdnidknow.github.io/opium-archive-vault/contents/leaks/${encodeURIComponent(file.name)}`;
 
                         tracks.push({
                             id: trackId++,
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             artist: meta.artist,
                             year: meta.year,
                             size: formatBytes(file.size),
-                            src: cdnUrl 
+                            src: audioUrl 
                         });
                     }
                 });
@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.tracks = tracks;
             localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify({ timestamp: Date.now(), data: tracks }));
             renderTracks();
-            updateStatus("ONLINE // CDN_LINK");
+            updateStatus("ONLINE // GITHUB_PAGES");
 
         } catch (e) {
             updateStatus(`OFFLINE // ${e.message}`);
