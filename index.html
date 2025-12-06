@@ -3,37 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OPIUM ARCHIVE // THE VAULT - Unreleased Music Leaks</title>
-    <meta name="google-site-verification" content="UaMQm8wc66detzd8SkrNukDiQJhjMY9v1kelKwULc8M" />
-    <meta name="description" content="THE VAULT es un archivo digital de música inédita y rarezas del colectivo OPIUM. Acceso directo a leaks y material exclusivo.">
+    <title>OPIUM ARCHIVE // THE VAULT</title>
+    <meta name="description" content="THE VAULT - Unreleased Audio Archive. Digital sanctuary for auditory artifacts.">
     <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#050505">
+    
     <meta property="og:title" content="OPIUM ARCHIVE // THE VAULT">
-    <meta property="og:description" content="Unreleased Audio Archive V.3.0. Digital sanctuary for auditory artifacts.">
-    <meta property="og:image" content="https://opium-archive-vault.vercel.app/assets/og-image.jpg"> 
+    <meta property="og:description" content="Unreleased Audio Archive V.3.0.">
+    <meta property="og:type" content="music.playlist">
     <meta property="og:url" content="https://opium-archive-vault.vercel.app/">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#000000">
+    
     <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="noise-overlay"></div>
     <div class="scanlines"></div>
+    <div class="vignette"></div>
     
+    <!-- PANTALLA DE INICIO (SPLASH) -->
     <div id="splashScreen" class="splash-screen">
-        <button id="enterArchiveBtn" class="enter-text hover-trigger blink-anim" data-i18n="intro_btn">[ ENTER ARCHIVE ]</button>
+        <div class="splash-content">
+            <div class="logo-large glitch-hover" data-text="OPIUM">OPIUM</div>
+            <button id="enterArchiveBtn" class="enter-text hover-trigger blink-anim" data-i18n="intro_btn">[ ENTER ARCHIVE ]</button>
+        </div>
     </div>
 
+    <!-- CONTENIDO PRINCIPAL (OCULTO AL INICIO) -->
     <div id="mainContent" class="hidden">
         
         <header>
             <div class="logo-wrapper">
-                <div class="logo glitch" data-text="OPIUM">OPIUM</div>
+                <div class="logo" data-text="OPIUM">OPIUM</div>
             </div>
             <nav class="main-nav">
                 <a href="#" id="nav-home" class="nav-link active hover-trigger" data-i18n="nav_home">[HOME]</a>
@@ -48,34 +54,43 @@
         </header>
 
         <section class="hero">
-            <h1 class="vamp-title glitch-hover hover-trigger" data-text="THE VAULT" data-i18n="hero_title">THE VAULT</h1>
-            <p class="subtitle blink-anim" data-i18n="hero_subtitle">/// UNRELEASED AUDIO ARCHIVE V.3.0</p>
+            <h1 class="vamp-title glitch-text" data-text="THE VAULT" data-i18n="hero_title">THE VAULT</h1>
+            <div class="subtitle-wrapper">
+                <p class="subtitle blink-anim" data-i18n="hero_subtitle">/// UNRELEASED AUDIO ARCHIVE V.3.0</p>
+            </div>
         </section>
 
         <main class="archive-container">
             
+            <!-- SECCIÓN DE LEAKS / LISTA DE PISTAS -->
             <div id="section-leaks" class="content-section">
                 <div class="search-wrapper">
                     <span class="prompt" data-i18n="search_prompt">> QUERY:</span>
-                    <input type="text" id="searchInput" class="hover-trigger" placeholder="SEARCH..." autocomplete="off">
+                    <input type="text" id="searchInput" class="hover-trigger" placeholder="SEARCH..." autocomplete="off" spellcheck="false">
                 </div>
 
-                <div class="tracklist-header">
-                    <span class="h-id">#</span>
-                    <span class="h-info" data-i18n="col_track">TRACK NAME</span>
-                    <span class="h-meta hide-mobile" data-i18n="col_year">YEAR</span>
-                    <span class="h-meta hide-mobile" data-i18n="col_size">SIZE</span>
-                    <span class="h-actions" data-i18n="col_action">ACT</span>
-                </div>
+                <div class="tracklist-container">
+                    <div class="tracklist-header">
+                        <span class="h-id">#</span>
+                        <span class="h-info" data-i18n="col_track">TRACK NAME</span>
+                        <span class="h-meta hide-mobile" data-i18n="col_year">YEAR</span>
+                        <span class="h-meta hide-mobile" data-i18n="col_size">SIZE</span>
+                        <span class="h-actions" data-i18n="col_action">ACT</span>
+                    </div>
 
-                <ul id="trackList" class="track-list">
-                </ul>
+                    <ul id="trackList" class="track-list">
+                        <li class="loading-state blink-anim">> ESTABLISHING CONNECTION...</li>
+                    </ul>
+                </div>
             </div>
 
+            <!-- SECCIÓN ABOUT -->
             <div id="section-about" class="content-section hidden">
                 <div class="about-content">
                     <div class="decorative-corner top-left"></div>
                     <div class="decorative-corner bottom-right"></div>
+                    <div class="decorative-corner top-right"></div>
+                    <div class="decorative-corner bottom-left"></div>
                     
                     <h2 data-i18n="about_title" class="gothic-sub">/// PROJECT MANIFESTO</h2>
                     
@@ -99,8 +114,8 @@
                         <div class="dev-block">
                             <p class="dev-title">> ARCHITECT: <span class="accent-text">dxnidknow</span></p>
                             <div class="social-links">
-                                <a href="https://x.com/dxnidknow" target="_blank" class="social-btn hover-trigger">[ X ]</a>
-                                <a href="https://www.instagram.com/dxnidknow/" target="_blank" class="social-btn hover-trigger">[ IG ]</a>
+                                <a href="https://x.com/dxnidknow" target="_blank" rel="noopener noreferrer" class="social-btn hover-trigger">[ X ]</a>
+                                <a href="https://www.instagram.com/dxnidknow/" target="_blank" rel="noopener noreferrer" class="social-btn hover-trigger">[ IG ]</a>
                             </div>
                         </div>
 
@@ -115,15 +130,17 @@
 
         </main>
 
+        <!-- MODAL TICKET FORM -->
         <div id="ticketModal" class="modal-overlay hidden">
             <div class="modal-terminal">
                 <div class="modal-header">
-                    <span class="modal-title">/// ENCRYPTED_CONNECTION</span>
+                    <span class="modal-title blink-anim">/// ENCRYPTED_CONNECTION</span>
                     <button id="closeModalBtn" class="close-btn hover-trigger">[X]</button>
                 </div>
                 
                 <div class="modal-body">
                     <form id="ticketForm" action="https://formspree.io/f/xwpgbgaz" method="POST" class="glitch-form">
+                        <!-- Campo oculto para evitar SPAM -->
                         <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
 
                         <div class="form-group">
@@ -145,10 +162,12 @@
             </div>
         </div>
 
+        <!-- REPRODUCTOR DE AUDIO FIJO -->
         <div class="player-container">
             <div class="progress-bar-wrapper hover-trigger" id="progressContainer">
                 <div class="progress-bg"></div>
                 <div class="progress-fill" id="progressBar"></div>
+                <div class="progress-glow"></div>
             </div>
             
             <div class="player-grid">
@@ -160,20 +179,27 @@
                 </div>
 
                 <div class="p-controls">
-                    <button id="prevBtn" class="ctrl-btn hover-trigger">⏮</button>
-                    <button id="playBtn" class="ctrl-btn main-play hover-trigger">▶</button>
-                    <button id="nextBtn" class="ctrl-btn hover-trigger">⏭</button>
+                    <button id="prevBtn" class="ctrl-btn hover-trigger" aria-label="Previous">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+                    <button id="playBtn" class="ctrl-btn main-play hover-trigger" aria-label="Play/Pause">
+                        <span class="play-icon">▶</span>
+                    </button>
+                    <button id="nextBtn" class="ctrl-btn hover-trigger" aria-label="Next">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
                 </div>
                 
                 <div class="p-volume hide-mobile">
                     <span class="vol-label" data-i18n="vol_label">VOL</span>
                     <div class="vol-slider-wrap">
-                        <input type="range" id="volumeSlider" class="hover-trigger" min="0" max="1" step="0.05" value="1">
+                        <input type="range" id="volumeSlider" class="hover-trigger" min="0" max="1" step="0.05" value="1" aria-label="Volume">
                     </div>
                 </div>
             </div>
             
-            <audio id="audioElement" preload="metadata"></audio>
+            <!-- FIX CRITICO: Sin crossorigin para permitir carga opaca desde GitHub Releases/S3 -->
+            <audio id="audioElement" preload="none" playsinline referrerpolicy="no-referrer"></audio>
         </div>
     </div>
 
