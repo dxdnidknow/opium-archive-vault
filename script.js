@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prevBtn: document.getElementById('prevBtn'),
         nextBtn: document.getElementById('nextBtn'),
         volSlider: document.getElementById('volumeSlider'),
-        volContainer: document.querySelector('.p-volume'), // Added container ref
+        volContainer: document.querySelector('.p-volume'),
         progressBar: document.getElementById('progressBar'),
         progressContainer: document.getElementById('progressContainer'),
         searchInput: document.getElementById('searchInput'),
@@ -339,20 +339,31 @@ document.addEventListener('DOMContentLoaded', () => {
         els.trackTitle.innerText = `${track.artist} - ${track.title}`;
         
         if (!track.src) return;
-        els.audio.referrerPolicy = "no-referrer";
+        
+        // SAFARI FIX: Direct src assignment, NO explicit .load()
         els.audio.src = track.src;
-        els.audio.load();
 
         if(!state.hasPlayedOnce) {
             state.hasPlayedOnce = true;
             els.playerContainer.classList.add('visible');
         }
         renderTracks(els.searchInput.value);
+        
         try {
-            await els.audio.play();
-            state.isPlaying = true;
-            updatePlayBtn(true);
+            // SAFARI FIX: Handle Play Promise
+            const playPromise = els.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    state.isPlaying = true;
+                    updatePlayBtn(true);
+                }).catch(error => {
+                    console.warn("Auto-play prevented (User interaction needed or buffering):", error);
+                    state.isPlaying = false;
+                    updatePlayBtn(false);
+                });
+            }
         } catch (err) {
+            console.error("Critical Audio Error:", err);
             state.isPlaying = false;
             updatePlayBtn(false);
         }
@@ -377,12 +388,52 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracks(els.searchInput.value); 
     }
 
+    // --- KEYBOARD CONTROLS (YOUTUBE STYLE) ---
+    document.addEventListener('keydown', (e) => {
+        // Ignore if user is typing in Search or Ticket form
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch(e.code) {
+            case 'Space':
+                e.preventDefault(); // Prevent page scroll
+                togglePlay();
+                break;
+            case 'ArrowRight':
+                if (!isNaN(els.audio.duration)) {
+                    e.preventDefault();
+                    els.audio.currentTime = Math.min(els.audio.duration, els.audio.currentTime + 5);
+                }
+                break;
+            case 'ArrowLeft':
+                if (!isNaN(els.audio.duration)) {
+                    e.preventDefault();
+                    els.audio.currentTime = Math.max(0, els.audio.currentTime - 5);
+                }
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                const newVolUp = Math.min(els.audio.volume + 0.05, 1);
+                els.audio.volume = newVolUp;
+                if(els.volSlider) els.volSlider.value = newVolUp;
+                localStorage.setItem(STORAGE_KEY_VOL, newVolUp);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                const newVolDown = Math.max(els.audio.volume - 0.05, 0);
+                els.audio.volume = newVolDown;
+                if(els.volSlider) els.volSlider.value = newVolDown;
+                localStorage.setItem(STORAGE_KEY_VOL, newVolDown);
+                break;
+        }
+    });
+
     // --- EVENTS & CONTROL LOGIC ---
 
     // 1. PLAYBACK END/ERROR
     els.audio.addEventListener('ended', () => {
-        if(state.currentTrackIndex === -1) return;
-        loadTrack(state.currentTrackIndex + 1)
+        // DISABLE AUTO-NEXT. STOP AT END.
+        state.isPlaying = false;
+        updatePlayBtn(false);
     });
     
     els.audio.addEventListener('error', () => {
