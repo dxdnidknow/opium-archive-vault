@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // CONFIGURACIÓN
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
-    const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v3';
+    const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v3_cdn'; // Cache key updated
     const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; 
     
     const CACHE_DURATION = 3600000; 
@@ -110,30 +110,35 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function parseFilename(filename) {
         let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '');
-        raw = raw.replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim();
+        // Clean underscores and extra spaces
+        raw = raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+        
         let year = 'N/A';
+        // Extract Year (e.g., 2021)
         const yearMatch = raw.match(/\b(20\d{2}|19\d{2})\b/);
         if (yearMatch) {
             year = yearMatch[0];
             raw = raw.replace(yearMatch[0], '').trim();
         }
+        
+        // Remove parenthesis and brackets
         raw = raw.replace(/\(\s*\)|\[\s*\]/g, '').trim();
+        
         let parts = raw.split(/\s-\s|\s-\s/);
         let artist = 'OPIUM ARCHIVE';
         let title = raw;
+        
         if (parts.length >= 2) {
             artist = parts[0].trim();
             title = parts.slice(1).join(' ').trim();
         } else {
-            const knownArtists = ['CARTI', 'KEN', 'CARSON', 'DESTROY', 'LONELY', 'HOMIXIDE'];
+            const knownArtists = ['CARTI', 'KEN', 'CARSON', 'DESTROY', 'LONELY', 'HOMIXIDE', 'PLAYBOI'];
             for(let k of knownArtists) {
                 if(raw.toUpperCase().startsWith(k)) {
-                    let splitIdx = raw.indexOf(' ');
-                    if(splitIdx > -1) {
-                         artist = raw.substring(0, splitIdx);
-                         title = raw.substring(splitIdx).trim();
-                    }
-                    break;
+                    // Try to find the first space after the artist name might be tricky 
+                    // with multi-word artists, but splitting by ' - ' is safer.
+                    // If no hyphen, we keep the raw string as title or artist based on context
+                    break; 
                 }
             }
         }
@@ -187,9 +192,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- DATA LOADING ---
+    // --- INPUT VALIDATION SYSTEM ---
+    function initInputValidation() {
+        const inputs = [
+            { id: 'alias', min: 4, max: 20, status: document.getElementById('aliasStatus') },
+            { id: 'message', min: 20, max: 400, status: document.getElementById('msgStatus') }
+        ];
+
+        inputs.forEach(field => {
+            const el = document.getElementById(field.id);
+            if (!el) return;
+
+            el.addEventListener('input', () => {
+                const len = el.value.length;
+                
+                // Actualizar texto status
+                if(field.status) {
+                    field.status.innerText = `> LEN: ${len} / ${field.max}`;
+
+                    // Validar longitud mínima visualmente
+                    if (len > 0 && len < field.min) {
+                        field.status.innerText += ` [MIN: ${field.min}]`;
+                        field.status.classList.add('invalid');
+                        field.status.classList.remove('valid');
+                        el.style.borderColor = 'var(--accent-red)';
+                    } else if (len >= field.min) {
+                        field.status.classList.remove('invalid');
+                        field.status.classList.add('valid');
+                        el.style.borderColor = '#333'; // Reset border
+                    } else {
+                        // Estado vacío
+                        field.status.classList.remove('invalid', 'valid');
+                        el.style.borderColor = '#333';
+                    }
+                }
+            });
+        });
+    }
+
+    // --- DATA LOADING (CDN MODE) ---
     async function loadData() {
         const cachedRaw = localStorage.getItem(STORAGE_KEY_CACHE);
+        
+        // Cache Logic (Optional: Uncomment for production speed)
+        /*
         if (cachedRaw) {
             try {
                 const { timestamp, data } = JSON.parse(cachedRaw);
@@ -203,30 +249,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem(STORAGE_KEY_CACHE);
             }
         }
+        */
 
         try {
-            const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/releases');
-            if (!res.ok) throw new Error(res.status === 403 ? "GITHUB RATE LIMIT EXCEEDED" : `CONNECTION ERROR (${res.status})`);
+            // Fetch file list from GitHub REPO (not Releases)
+            const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/contents/leaks');
             
-            const releases = await res.json();
+            if (!res.ok) {
+                if(res.status === 403) throw new Error("API LIMIT EXCEEDED");
+                throw new Error(`REPO ACCESS DENIED (${res.status})`);
+            }
+            
+            const files = await res.json();
             let trackId = 1;
             let tracks = [];
 
-            if (Array.isArray(releases)) {
-                releases.forEach(release => {
-                    if (release.assets && Array.isArray(release.assets)) {
-                        release.assets.forEach(asset => {
-                            if (asset.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
-                                const meta = parseFilename(asset.name);
-                                tracks.push({
-                                    id: trackId++,
-                                    title: meta.title,
-                                    artist: meta.artist,
-                                    year: meta.year,
-                                    size: formatBytes(asset.size),
-                                    src: asset.browser_download_url.replace('http:', 'https:') 
-                                });
-                            }
+            if (Array.isArray(files)) {
+                files.forEach(file => {
+                    if (file.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
+                        const meta = parseFilename(file.name);
+                        
+                        // JSDelivr CDN Link Construction
+                        // This fixes iPhone/Safari MIME type issues
+                        const cdnUrl = `https://cdn.jsdelivr.net/gh/dxdnidknow/opium-archive-vault/leaks/${encodeURIComponent(file.name)}`;
+
+                        tracks.push({
+                            id: trackId++,
+                            title: meta.title,
+                            artist: meta.artist,
+                            year: meta.year,
+                            size: formatBytes(file.size),
+                            src: cdnUrl 
                         });
                     }
                 });
@@ -235,10 +288,12 @@ document.addEventListener('DOMContentLoaded', () => {
             state.tracks = tracks;
             localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify({ timestamp: Date.now(), data: tracks }));
             renderTracks();
-            updateStatus("ONLINE // SYNCED");
+            updateStatus("ONLINE // CDN_LINK");
+
         } catch (e) {
             updateStatus(`OFFLINE // ${e.message}`);
             if(els.trackList) els.trackList.innerHTML = `<li style="padding:20px; color:#ff0000; border:1px solid red;">> ERROR: ${e.message}</li>`;
+            console.error(e);
         }
     }
 
@@ -438,7 +493,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     els.audio.addEventListener('error', () => {
         if(state.tracks.length > 1 && state.currentTrackIndex !== -1) {
-            setTimeout(() => loadTrack(state.currentTrackIndex + 1), 1000); 
+            // Only retry if it's not a complete failure of the list
+            console.error("Audio Load Error");
         }
     });
 
@@ -601,45 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     els.langEn.addEventListener('click', () => setLang('en'));
     els.langEs.addEventListener('click', () => setLang('es'));
-// --- INPUT VALIDATION SYSTEM ---
-    function initInputValidation() {
-        const inputs = [
-            { id: 'alias', min: 4, max: 20, status: document.getElementById('aliasStatus') },
-            { id: 'message', min: 20, max: 400, status: document.getElementById('msgStatus') }
-        ];
 
-        inputs.forEach(field => {
-            const el = document.getElementById(field.id);
-            if (!el) return;
-
-            el.addEventListener('input', () => {
-                const len = el.value.length;
-                const remaining = field.max - len;
-                
-                // Actualizar texto
-                field.status.innerText = `> LEN: ${len} / ${field.max}`;
-
-                // Validar longitud mínima visualmente
-                if (len > 0 && len < field.min) {
-                    field.status.innerText += ` [MIN: ${field.min}]`;
-                    field.status.classList.add('invalid');
-                    field.status.classList.remove('valid');
-                    el.style.borderColor = 'var(--accent-red)';
-                } else if (len >= field.min) {
-                    field.status.classList.remove('invalid');
-                    field.status.classList.add('valid');
-                    el.style.borderColor = '#333'; // Reset border
-                } else {
-                    // Estado vacío
-                    field.status.classList.remove('invalid', 'valid');
-                    el.style.borderColor = '#333';
-                }
-            });
-        });
-    }
-
-    // LLAMADA INICIAL (Insertar esto justo antes de cerrar el DOMContentLoaded)
-    initInputValidation();
     // --- APP INIT ---
     els.enterArchiveBtn.addEventListener('click', () => {
         els.splashScreen.style.opacity = '0';
@@ -729,6 +747,9 @@ document.addEventListener('DOMContentLoaded', () => {
             grecaptcha.reset();
         }
     });
+
+    // Initialize Input Validation
+    initInputValidation();
 
     setInterval(() => {
         const now = new Date();
