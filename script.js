@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
     const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v3';
-    const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; // Nueva key para el tiempo
+    const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; 
     
-    const CACHE_DURATION = 3600000; // 1 hora caché datos
-    const COOLDOWN_TIME = 30 * 60 * 1000; // 30 Minutos cooldown ticket
+    const CACHE_DURATION = 3600000; 
+    const COOLDOWN_TIME = 30 * 60 * 1000; // 30 Minutos
 
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             no_results: "NO DATA FOUND IN ARCHIVE...",
             form_alias: "ALIAS / CODENAME *", form_msg: "MESSAGE / LINK *", form_send: "[ SEND DATA ]",
             form_sent: "/// TRANSMISSION SENT ///", 
-            form_cd: "/// SYSTEM COOLDOWN ///", // Texto cuando está bloqueado
+            form_cd: "/// SYSTEM COOLDOWN ///", 
             form_sending: "TRANSMITTING...", form_error: "> SYSTEM ERROR",
             form_ph: "PASTE LINKS HERE..."
         },
@@ -92,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent: document.getElementById('mainContent')
     };
     
-    // --- HELPER FUNCTIONS ---
     function parseFilename(filename) {
         let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '');
         raw = raw.replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -156,6 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSubmitButtonState() {
+        if(!els.ticketSubmitBtn) return; // Seguridad si el HTML no ha cargado
+        
         const cooldown = checkCooldown();
         const btnText = els.ticketSubmitBtn.querySelector('.btn-text');
         
@@ -226,7 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(el) el.innerHTML = `<span class="beacon"></span>${msg}`;
     }
 
-    // --- RENDER & PLAYER ---
     function renderTracks(query = '') {
         if (!els.trackList) return;
         els.trackList.innerHTML = '';
@@ -387,8 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.langEs.classList.remove('active');
         document.getElementById(`lang-${lang}`).classList.add('active');
         
-        // Actualizar botón si está en cooldown para reflejar idioma
-        if(els.ticketSubmitBtn.disabled) updateSubmitButtonState();
+        if(els.ticketSubmitBtn && els.ticketSubmitBtn.disabled) updateSubmitButtonState();
         renderTracks(els.searchInput.value);
     }
     
@@ -426,7 +425,6 @@ document.addEventListener('DOMContentLoaded', () => {
     els.ticketForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Doble check de cooldown por seguridad
         if(checkCooldown().active) return;
 
         const btnText = els.ticketSubmitBtn.querySelector('.btn-text');
@@ -456,7 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 els.successView.style.display = 'flex';
                 els.ticketForm.reset();
 
-                // CERRAR AUTOMÁTICAMENTE
                 setTimeout(() => {
                     els.modal.classList.remove('open');
                     setTimeout(() => els.modal.classList.add('hidden'), 300);

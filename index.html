@@ -26,7 +26,6 @@
     <div class="scanlines"></div>
     <div class="vignette"></div>
     
-    <!-- PANTALLA DE INICIO (SPLASH) -->
     <div id="splashScreen" class="splash-screen">
         <div class="splash-content">
             <div class="logo-large glitch-hover" data-text="OPIUM">OPIUM</div>
@@ -34,7 +33,6 @@
         </div>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL (OCULTO AL INICIO) -->
     <div id="mainContent" class="hidden">
         
         <header>
@@ -62,7 +60,6 @@
 
         <main class="archive-container">
             
-            <!-- SECCIÓN DE LEAKS / LISTA DE PISTAS -->
             <div id="section-leaks" class="content-section">
                 <div class="search-wrapper">
                     <span class="prompt" data-i18n="search_prompt">> QUERY:</span>
@@ -84,7 +81,6 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN ABOUT -->
             <div id="section-about" class="content-section hidden">
                 <div class="about-content">
                     <div class="decorative-corner top-left"></div>
@@ -130,7 +126,7 @@
 
         </main>
 
-        <!-- MODAL TICKET FORM -->
+        <!-- MODAL TICKET FORM (CORREGIDO CON NUEVOS IDs) -->
         <div id="ticketModal" class="modal-overlay hidden">
             <div class="modal-terminal">
                 <div class="modal-header">
@@ -139,8 +135,8 @@
                 </div>
                 
                 <div class="modal-body">
+                    <!-- VISTA FORMULARIO -->
                     <form id="ticketForm" action="https://formspree.io/f/xwpgbgaz" method="POST" class="glitch-form">
-                        <!-- Campo oculto para evitar SPAM -->
                         <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
 
                         <div class="form-group">
@@ -153,16 +149,23 @@
                             <textarea name="message" id="message" rows="4" class="hover-trigger" required></textarea>
                         </div>
 
-                        <button type="submit" class="submit-btn hover-trigger">
+                        <!-- ID AGREGADO AQUI: ticketSubmitBtn -->
+                        <button type="submit" id="ticketSubmitBtn" class="submit-btn hover-trigger">
                             <span class="btn-text" data-i18n="form_send">[ SEND DATA ]</span>
                         </button>
                         <p id="formStatus" class="status-msg"></p> 
                     </form>
+
+                    <!-- VISTA EXITO AGREGADA AQUI: successView -->
+                    <div id="successView" class="success-view">
+                        <div class="success-icon">✓</div>
+                        <div class="success-text">/// DATA UPLOADED ///</div>
+                        <p style="margin-top:10px; font-size: 0.7rem; color: #666;">CONNECTION TERMINATED.</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- REPRODUCTOR DE AUDIO FIJO -->
         <div class="player-container">
             <div class="progress-bar-wrapper hover-trigger" id="progressContainer">
                 <div class="progress-bg"></div>
@@ -198,7 +201,6 @@
                 </div>
             </div>
             
-            <!-- FIX CRITICO: Sin crossorigin para permitir carga opaca desde GitHub Releases/S3 -->
             <audio id="audioElement" preload="none" playsinline referrerpolicy="no-referrer"></audio>
         </div>
     </div>
