@@ -231,10 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- DATA LOADING (CDN MODE) ---
+// --- DATA LOADING (CDN MODE - PATH FIXED) ---
     async function loadData() {
         const cachedRaw = localStorage.getItem(STORAGE_KEY_CACHE);
         
-        // Cache Logic (Optional: Uncomment for production speed)
+        // Cache Logic
         /*
         if (cachedRaw) {
             try {
@@ -252,8 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
         */
 
         try {
-            // Fetch file list from GitHub REPO (not Releases)
-            const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/contents/leaks');
+            // CORRECCIÓN 1: La ruta API ahora apunta a 'contents/leaks'
+            const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/contents/contents/leaks');
             
             if (!res.ok) {
                 if(res.status === 403) throw new Error("API LIMIT EXCEEDED");
@@ -269,9 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (file.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
                         const meta = parseFilename(file.name);
                         
-                        // JSDelivr CDN Link Construction
-                        // This fixes iPhone/Safari MIME type issues
-                        const cdnUrl = `https://cdn.jsdelivr.net/gh/dxdnidknow/opium-archive-vault/leaks/${encodeURIComponent(file.name)}`;
+                        // CORRECCIÓN 2: La ruta CDN también apunta a 'contents/leaks'
+                        const cdnUrl = `https://cdn.jsdelivr.net/gh/dxdnidknow/opium-archive-vault/contents/leaks/${encodeURIComponent(file.name)}`;
 
                         tracks.push({
                             id: trackId++,
