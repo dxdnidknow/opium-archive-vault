@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // ==========================================
-    // 1. CONFIGURACIÓN
+    // 1. CONFIGURACIÓN Y ESTADO
     // ==========================================
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
     const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v5_final'; 
     const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; 
     
-    const CACHE_DURATION = 3600000; 
-    const COOLDOWN_TIME = 30 * 60 * 1000; 
+    const CACHE_DURATION = 3600000; // 1 Hora
+    const COOLDOWN_TIME = 30 * 60 * 1000; // 30 Minutos
 
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
@@ -115,20 +115,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseFilename(filename) {
         let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '');
         raw = raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
-        
         let year = 'N/A';
         const yearMatch = raw.match(/\b(20\d{2}|19\d{2})\b/);
         if (yearMatch) {
             year = yearMatch[0];
             raw = raw.replace(yearMatch[0], '').trim();
         }
-        
         raw = raw.replace(/\(\s*\)|\[\s*\]/g, '').trim();
-        
         let parts = raw.split(/\s-\s|\s-\s/);
         let artist = 'OPIUM ARCHIVE';
         let title = raw;
-        
         if (parts.length >= 2) {
             artist = parts[0].trim();
             title = parts.slice(1).join(' ').trim();
@@ -151,8 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${min}:${sec<10?'0'+sec:sec}`;
     }
 
-    // *** NUEVA FUNCIÓN: FORZAR DESCARGA REAL ***
-    // Esto evita que el navegador abra el reproductor blanco/negro
+    // FUNCIÓN DE DESCARGA FORZADA (Evita reproductor blanco)
     async function forceDownload(url, filename) {
         try {
             const response = await fetch(url);
@@ -162,16 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = filename; // Esto fuerza el guardado
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            // Limpieza
             setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         } catch (error) {
             console.error("Download failed, opening fallback:", error);
-            // Si falla (CORS estricto), abrimos en nueva pestaña como último recurso
             window.open(url, '_blank');
         }
     }
@@ -221,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             year: meta.year,
                             size: formatBytes(file.size),
                             src: audioUrl,
-                            filename: file.name // Guardamos nombre original para descarga
+                            filename: file.name
                         });
                     }
                 });
@@ -272,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `track-item hover-trigger ${isActive ? 'active-track' : ''}`;
             
-            // ID
             const divId = document.createElement('div');
             divId.className = 't-id';
             if (isActive) {
@@ -285,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             li.appendChild(divId);
 
-            // Info
             const divInfo = document.createElement('div');
             divInfo.className = 't-info';
             const spanTitle = document.createElement('span');
@@ -298,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
             divInfo.appendChild(spanArtist);
             li.appendChild(divInfo);
 
-            // Meta
             const divYear = document.createElement('div');
             divYear.className = 't-meta hide-mobile';
             divYear.textContent = track.year;
@@ -308,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
             divSize.textContent = track.size;
             li.appendChild(divSize);
 
-            // Acciones
             const divActions = document.createElement('div');
             divActions.className = 'col-actions';
             
@@ -317,13 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlay.dataset.index = realIndex;
             btnPlay.textContent = isActive && state.isPlaying ? '❚❚' : '▶';
             
-            // *** BOTÓN DE DESCARGA CON LÓGICA DE FUERZA ***
-            const btnDown = document.createElement('button'); // Cambiado de <a> a <button>
+            // Botón Download usando ForceDownload
+            const btnDown = document.createElement('button');
             btnDown.className = 'icon-btn download-trigger';
             btnDown.textContent = '↓';
-            // Evento para forzar descarga
             btnDown.onclick = (e) => {
-                e.stopPropagation(); // Evitar reproducir al hacer click
+                e.stopPropagation();
                 forceDownload(track.src, track.filename || `${track.artist} - ${track.title}.mp3`);
             };
 
@@ -458,21 +446,32 @@ document.addEventListener('DOMContentLoaded', () => {
     els.navHome.addEventListener('click', (e) => { e.preventDefault(); switchSection('leaks'); });
     els.navAbout.addEventListener('click', (e) => { e.preventDefault(); switchSection('about'); });
 
-    // *** FUNCIÓN IDIOMA CON ANIMACIÓN ***
+    // ==========================================
+    // CAMBIO DE IDIOMA CON CORRECCIÓN
+    // ==========================================
     function setLang(lang) {
         state.lang = lang;
         localStorage.setItem(STORAGE_KEY_LANG, lang);
         
-        // 1. Agregar clase de animación a todos los textos traducibles
+        // 1. Animación Glitch
         const elements = document.querySelectorAll('[data-i18n]');
         elements.forEach(el => el.classList.add('text-scramble'));
 
-        // 2. Esperar un poco (300ms) para que el efecto se vea
+        // 2. Esperar y traducir (CON PROTECCIÓN)
         setTimeout(() => {
             elements.forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[lang][key]) el.innerText = translations[lang][key];
-                // 3. Quitar clase
+                
+                // --- CORRECCIÓN CRÍTICA ---
+                // Si la etiqueta es 'player_idle' (título de canción) Y hay una canción sonando,
+                // IGNORAR la traducción para no sobrescribir el título real.
+                if (key === 'player_idle' && state.currentTrackIndex !== -1) {
+                    // No hacer nada, dejar el nombre de la canción
+                } else {
+                    // Traducir normalmente
+                    if (translations[lang][key]) el.innerText = translations[lang][key];
+                }
+                
                 el.classList.remove('text-scramble');
             });
 
