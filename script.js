@@ -369,12 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 artist: track.artist,
                 album: "THE VAULT ARCHIVE",
                 artwork: [
-                    { src: COVER_ART_URL, sizes: '96x96',   type: 'image/jpeg' },
-                    { src: COVER_ART_URL, sizes: '128x128', type: 'image/jpeg' },
-                    { src: COVER_ART_URL, sizes: '192x192', type: 'image/jpeg' },
-                    { src: COVER_ART_URL, sizes: '256x256', type: 'image/jpeg' },
-                    { src: COVER_ART_URL, sizes: '384x384', type: 'image/jpeg' },
-                    { src: COVER_ART_URL, sizes: '512x512', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '96x96',   type: 'assets/images/cover.jpg' },
+                    { src: COVER_ART_URL, sizes: '128x128', type: 'assets/images/cover.jpg' },
+                    { src: COVER_ART_URL, sizes: '192x192', type: 'assets/images/cover.jpg' },
+                    { src: COVER_ART_URL, sizes: '256x256', type: 'assets/images/cover.jpg' },
+                    { src: COVER_ART_URL, sizes: '384x384', type: 'assets/images/cover.jpg' },
+                    { src: COVER_ART_URL, sizes: '512x512', type: 'assets/images/cover.jpg' },
                 ]
             });
 
