@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // URL DE LA IMAGEN PARA EL REPRODUCTOR DEL CELULAR (iOS/Android)
     // CAMBIA ESTO POR TU PROPIA IMAGEN (Recomendado: 512x512px, PNG o JPG)
-    const COVER_ART_URL = 'https://i.pinimg.com/736x/8d/30/1e/8d301e07223630de8bb7206d20379208.jpg';
+    const COVER_ART_URL = 'assets/images/cover.jpg';
 
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
@@ -369,12 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 artist: track.artist,
                 album: "THE VAULT ARCHIVE",
                 artwork: [
-                    { src: COVER_ART_URL, sizes: '96x96',   type: 'assets/images/cover.jpg' },
-                    { src: COVER_ART_URL, sizes: '128x128', type: 'assets/images/cover.jpg' },
-                    { src: COVER_ART_URL, sizes: '192x192', type: 'assets/images/cover.jpg' },
-                    { src: COVER_ART_URL, sizes: '256x256', type: 'assets/images/cover.jpg' },
-                    { src: COVER_ART_URL, sizes: '384x384', type: 'assets/images/cover.jpg' },
-                    { src: COVER_ART_URL, sizes: '512x512', type: 'assets/images/cover.jpg' },
+        { src: COVER_ART_URL, sizes: '96x96',   type: 'image/jpeg' }, 
+        { src: COVER_ART_URL, sizes: '128x128', type: 'image/jpeg' },
+        { src: COVER_ART_URL, sizes: '192x192', type: 'image/jpeg' },
+        { src: COVER_ART_URL, sizes: '256x256', type: 'image/jpeg' },
+        { src: COVER_ART_URL, sizes: '384x384', type: 'image/jpeg' },
+        { src: COVER_ART_URL, sizes: '512x512', type: 'image/jpeg' },
                 ]
             });
 
