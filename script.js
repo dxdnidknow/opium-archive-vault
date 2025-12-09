@@ -8,8 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v5_final'; 
     const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; 
     
-    const CACHE_DURATION = 3600000; // 1 Hora
-    const COOLDOWN_TIME = 30 * 60 * 1000; // 30 Minutos
+    const CACHE_DURATION = 3600000; 
+    const COOLDOWN_TIME = 30 * 60 * 1000; 
+
+    // URL DE LA IMAGEN PARA EL REPRODUCTOR DEL CELULAR (iOS/Android)
+    // CAMBIA ESTO POR TU PROPIA IMAGEN (Recomendado: 512x512px, PNG o JPG)
+    const COVER_ART_URL = 'https://i.pinimg.com/736x/8d/30/1e/8d301e07223630de8bb7206d20379208.jpg';
 
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
@@ -147,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${min}:${sec<10?'0'+sec:sec}`;
     }
 
-    // FUNCIÓN DE DESCARGA FORZADA (Evita reproductor blanco)
     async function forceDownload(url, filename) {
         try {
             const response = await fetch(url);
@@ -306,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlay.dataset.index = realIndex;
             btnPlay.textContent = isActive && state.isPlaying ? '❚❚' : '▶';
             
-            // Botón Download usando ForceDownload
             const btnDown = document.createElement('button');
             btnDown.className = 'icon-btn download-trigger';
             btnDown.textContent = '↓';
@@ -325,37 +327,86 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 6. CONTROL AUDIO
+    // 6. CONTROL AUDIO (CON METADATOS MÓVILES)
     // ==========================================
     async function loadTrack(index) {
         if (state.tracks.length === 0) return;
         if (index >= state.tracks.length) index = 0;
         if (index < 0) index = state.tracks.length - 1; 
+        
         state.currentTrackIndex = index;
         const track = state.tracks[index];
         els.trackTitle.innerText = `${track.artist} - ${track.title}`;
+        
         if (!track.src) return;
+        
         els.audio.src = track.src;
+
         if(!state.hasPlayedOnce) {
             state.hasPlayedOnce = true;
             els.playerContainer.classList.add('visible');
         }
         renderTracks(els.searchInput.value); 
+        
         try {
             const playPromise = els.audio.play();
             if (playPromise !== undefined) {
-                playPromise.then(() => { state.isPlaying = true; updatePlayBtn(true); })
+                playPromise.then(() => { 
+                    state.isPlaying = true; 
+                    updatePlayBtn(true);
+                    updateMediaSession(track); // Actualizar Info Móvil
+                })
                 .catch(() => { state.isPlaying = false; updatePlayBtn(false); });
             }
         } catch (err) {}
     }
 
+    // *** NUEVA FUNCIÓN: ACTUALIZAR PANTALLA DE BLOQUEO (iOS/Android) ***
+    function updateMediaSession(track) {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist: track.artist,
+                album: "THE VAULT ARCHIVE",
+                artwork: [
+                    { src: COVER_ART_URL, sizes: '96x96',   type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '128x128', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '192x192', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '256x256', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '384x384', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '512x512', type: 'image/jpeg' },
+                ]
+            });
+
+            // Conectar botones de la pantalla de bloqueo
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+            navigator.mediaSession.setActionHandler('previoustrack', () => loadTrack(state.currentTrackIndex - 1));
+            navigator.mediaSession.setActionHandler('nexttrack', () => loadTrack(state.currentTrackIndex + 1));
+        }
+    }
+
     function togglePlay() {
         if (state.currentTrackIndex === -1 && state.tracks.length > 0) { loadTrack(0); return; }
-        if(els.audio.paused) { els.audio.play().then(() => { state.isPlaying = true; updatePlayBtn(true); }).catch(() => { state.isPlaying = false; updatePlayBtn(false); }); }
-        else { els.audio.pause(); state.isPlaying = false; updatePlayBtn(false); }
+        if(els.audio.paused) { 
+            els.audio.play().then(() => { 
+                state.isPlaying = true; 
+                updatePlayBtn(true); 
+                // Asegurar que el estado se actualice en el móvil
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+            }).catch(() => { state.isPlaying = false; updatePlayBtn(false); }); 
+        } else { 
+            els.audio.pause(); 
+            state.isPlaying = false; 
+            updatePlayBtn(false); 
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
+        }
     }
-    function updatePlayBtn(playing) { els.playBtn.innerHTML = playing ? '❚❚' : '<span class="play-icon">▶</span>'; renderTracks(els.searchInput.value); }
+
+    function updatePlayBtn(playing) { 
+        els.playBtn.innerHTML = playing ? '❚❚' : '<span class="play-icon">▶</span>'; 
+        renderTracks(els.searchInput.value); 
+    }
 
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -447,31 +498,24 @@ document.addEventListener('DOMContentLoaded', () => {
     els.navAbout.addEventListener('click', (e) => { e.preventDefault(); switchSection('about'); });
 
     // ==========================================
-    // CAMBIO DE IDIOMA CON CORRECCIÓN
+    // IDIOMA (CORREGIDO)
     // ==========================================
     function setLang(lang) {
         state.lang = lang;
         localStorage.setItem(STORAGE_KEY_LANG, lang);
         
-        // 1. Animación Glitch
         const elements = document.querySelectorAll('[data-i18n]');
         elements.forEach(el => el.classList.add('text-scramble'));
 
-        // 2. Esperar y traducir (CON PROTECCIÓN)
         setTimeout(() => {
             elements.forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                
-                // --- CORRECCIÓN CRÍTICA ---
-                // Si la etiqueta es 'player_idle' (título de canción) Y hay una canción sonando,
-                // IGNORAR la traducción para no sobrescribir el título real.
+                // Si la etiqueta es 'player_idle' Y hay una canción, IGNORAR la traducción
                 if (key === 'player_idle' && state.currentTrackIndex !== -1) {
-                    // No hacer nada, dejar el nombre de la canción
+                    // No hacer nada
                 } else {
-                    // Traducir normalmente
                     if (translations[lang][key]) el.innerText = translations[lang][key];
                 }
-                
                 el.classList.remove('text-scramble');
             });
 
