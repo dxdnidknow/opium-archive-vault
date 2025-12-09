@@ -1,8 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // ==========================================
-    // 1. CONFIGURACIÓN Y ESTADO
-    // ==========================================
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
     const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v5_final'; 
@@ -11,8 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const CACHE_DURATION = 3600000; 
     const COOLDOWN_TIME = 30 * 60 * 1000; 
 
-    // URL DE LA IMAGEN PARA EL REPRODUCTOR DEL CELULAR (iOS/Android)
-    // CAMBIA ESTO POR TU PROPIA IMAGEN (Recomendado: 512x512px, PNG o JPG)
     const COVER_ART_URL = 'assets/images/cover.jpg';
 
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
@@ -26,9 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tracks: [] 
     };
 
-    // ==========================================
-    // 2. TRADUCCIONES
-    // ==========================================
     const translations = {
         en: {
             nav_home: "[HOME]", nav_about: "[ABOUT]", 
@@ -104,9 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent: document.getElementById('mainContent')
     };
 
-    // ==========================================
-    // 3. UTILIDADES
-    // ==========================================
     const debounce = (func, wait) => {
         let timeout;
         return function executedFunction(...args) {
@@ -172,9 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ==========================================
-    // 4. CARGA DE DATOS
-    // ==========================================
     async function loadData() {
         const cachedRaw = localStorage.getItem(STORAGE_KEY_CACHE);
         
@@ -247,9 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(el) el.innerHTML = `<span class="beacon"></span>${msg}`;
     }
 
-    // ==========================================
-    // 5. RENDERIZADO
-    // ==========================================
     function renderTracks(query = '') {
         if (!els.trackList) return;
         els.trackList.innerHTML = '';
@@ -326,9 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
         els.trackList.appendChild(frag);
     }
 
-    // ==========================================
-    // 6. CONTROL AUDIO (CON METADATOS MÓVILES)
-    // ==========================================
     async function loadTrack(index) {
         if (state.tracks.length === 0) return;
         if (index >= state.tracks.length) index = 0;
@@ -354,14 +334,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 playPromise.then(() => { 
                     state.isPlaying = true; 
                     updatePlayBtn(true);
-                    updateMediaSession(track); // Actualizar Info Móvil
+                    updateMediaSession(track);
                 })
                 .catch(() => { state.isPlaying = false; updatePlayBtn(false); });
             }
         } catch (err) {}
     }
 
-    // *** NUEVA FUNCIÓN: ACTUALIZAR PANTALLA DE BLOQUEO (iOS/Android) ***
     function updateMediaSession(track) {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
@@ -378,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             });
 
-            // Conectar botones de la pantalla de bloqueo
+
             navigator.mediaSession.setActionHandler('play', togglePlay);
             navigator.mediaSession.setActionHandler('pause', togglePlay);
             navigator.mediaSession.setActionHandler('previoustrack', () => loadTrack(state.currentTrackIndex - 1));
@@ -392,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             els.audio.play().then(() => { 
                 state.isPlaying = true; 
                 updatePlayBtn(true); 
-                // Asegurar que el estado se actualice en el móvil
+
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
             }).catch(() => { state.isPlaying = false; updatePlayBtn(false); }); 
         } else { 
@@ -433,7 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
         els.volSlider.value = state.volume; els.audio.volume = state.volume;
     }
     
-    // SCROLL VOLUMEN
     if (els.volContainer) {
         els.volContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -497,9 +475,6 @@ document.addEventListener('DOMContentLoaded', () => {
     els.navHome.addEventListener('click', (e) => { e.preventDefault(); switchSection('leaks'); });
     els.navAbout.addEventListener('click', (e) => { e.preventDefault(); switchSection('about'); });
 
-    // ==========================================
-    // IDIOMA (CORREGIDO)
-    // ==========================================
     function setLang(lang) {
         state.lang = lang;
         localStorage.setItem(STORAGE_KEY_LANG, lang);
@@ -510,9 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             elements.forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                // Si la etiqueta es 'player_idle' Y hay una canción, IGNORAR la traducción
                 if (key === 'player_idle' && state.currentTrackIndex !== -1) {
-                    // No hacer nada
                 } else {
                     if (translations[lang][key]) el.innerText = translations[lang][key];
                 }
@@ -531,9 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
     els.langEn.addEventListener('click', () => setLang('en'));
     els.langEs.addEventListener('click', () => setLang('es'));
 
-    // ==========================================
-    // INIT
-    // ==========================================
     els.openModalBtn.addEventListener('click', () => { 
         els.modal.classList.remove('hidden');
         setTimeout(() => els.modal.classList.add('open'), 10);
@@ -544,7 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     els.closeModalBtn.addEventListener('click', () => { els.modal.classList.remove('open'); setTimeout(() => els.modal.classList.add('hidden'), 300); });
     
-    // Validación Inputs
     ['alias', 'message'].forEach(id => {
         const el = document.getElementById(id);
         const st = document.getElementById(id === 'alias' ? 'aliasStatus' : 'msgStatus');
