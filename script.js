@@ -1,15 +1,59 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ==========================================
+    // 🔒 MÓDULO DE SEGURIDAD (ANTI-COPY SYSTEM)
+    // ==========================================
+    const protectSystem = () => {
+        // 1. Bloquear Clic Derecho
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // 2. Bloquear Teclas de Desarrollo (F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S)
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false; // Ctrl+Shift+I/J/C
+            if (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83)) return false; // Ctrl+U / Ctrl+S
+        };
+
+        // 3. Bloquear arrastre de imágenes (Ghost dragging)
+        document.querySelectorAll('img').forEach(img => {
+            img.setAttribute('draggable', 'false');
+            img.addEventListener('dragstart', (e) => e.preventDefault());
+        });
+
+        // 4. Anti-Debugger Loop (Dificulta la inspección)
+        // Nota: Esto pausará la consola si alguien intenta abrirla agresivamente.
+        setInterval(() => {
+            const start = performance.now();
+            debugger;
+            const end = performance.now();
+            if (end - start > 100) {
+                document.body.innerHTML = '<div style="background:black;color:red;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:2rem;">ACCESS DENIED /// SECURITY TRIGGERED</div>';
+            }
+        }, 4000);
+        
+        // Limpiar consola al inicio
+        console.clear();
+        console.log("%c OPIUM ARCHIVE %c SECURE CONNECTION ESTABLISHED ", "background: #000; color: #fff; font-size: 14px; padding: 5px;", "background: #ff0000; color: #000; font-size: 14px; padding: 5px; font-weight: bold;");
+    };
+    
+    // Inicializar seguridad
+    protectSystem();
+
+
+    // ==========================================
+    // ⚙️ CONFIGURACIÓN DEL SISTEMA
+    // ==========================================
     const STORAGE_KEY_VOL = 'opium_vault_volume';
     const STORAGE_KEY_LANG = 'opium_vault_lang';
-    const STORAGE_KEY_CACHE = 'opium_vault_data_cache_v5_final'; 
+    const STORAGE_KEY_CACHE = 'opium_vault_cache_clean'; 
     const STORAGE_KEY_COOLDOWN = 'opium_ticket_timer'; 
     
-    const CACHE_DURATION = 3600000; 
-    const COOLDOWN_TIME = 30 * 60 * 1000; 
+    const CACHE_DURATION = 3600000; // 1 Hora
+    const COOLDOWN_TIME = 30 * 60 * 1000; // 30 Minutos
 
     const COVER_ART_URL = 'assets/images/cover.jpg';
-
+    
+    // Audio silencioso para desbloqueo en móviles
     const SILENT_AUDIO = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTYXdmEgNS4xLjAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 
     let state = {
@@ -21,47 +65,49 @@ document.addEventListener('DOMContentLoaded', () => {
         tracks: [] 
     };
 
+    // --- LENGUAJE Y TEXTOS ---
     const translations = {
         en: {
-            nav_home: "[HOME]", nav_about: "[ABOUT]", 
-            hero_title: "THE VAULT", hero_subtitle: "/// UNRELEASED AUDIO ARCHIVE V.3.0",
-            search_prompt: "> QUERY:", search_placeholder: "SEARCH...", 
-            col_track: "TRACK NAME", col_year: "YEAR", col_size: "SIZE", col_action: "ACT",
-            about_title: "/// PROJECT MANIFESTO", 
-            about_p1: "THE ARCHIVE IS A DIGITAL SANCTUARY DEDICATED TO THE PRESERVATION OF RARE AUDITORY ARTIFACTS FROM THE OPIUM ERA.", 
-            about_p2: "WE DO NOT OWN THE RIGHTS TO THESE RECORDINGS. THIS IS A NON-PROFIT FAN INITIATIVE.",
-            lbl_sync: "> LAST SYNC:", btn_ticket: "[ SUBMIT TICKET ]",
-            intro_btn: "[ ENTER ARCHIVE ]",
-            player_idle: "NO ACTIVE SIGNAL", vol_label: "VOL", 
-            no_results: "NO DATA FOUND IN ARCHIVE...",
-            form_alias: "ALIAS / CODENAME *", form_msg: "MESSAGE / LINK *", form_send: "[ SEND DATA ]",
-            form_sent: "/// TRANSMISSION SENT ///", 
-            form_cd: "/// SYSTEM COOLDOWN ///", 
-            form_sending: "TRANSMITTING...", form_error: "> SYSTEM ERROR",
-            form_ph: "PASTE LINKS HERE...",
-            form_captcha_err: "> VERIFICATION FAILED"
+            nav_home: "ARCHIVE", nav_about: "INFORMATION", 
+            hero_title: "THE VAULT", hero_subtitle: "UNRELEASED AUDIO COLLECTION V.3",
+            search_prompt: "SEARCH DATABASE", search_placeholder: "Type to search...", 
+            col_track: "TRACK TITLE", col_year: "YEAR", col_size: "SIZE", col_action: "PLAY",
+            about_title: "MANIFESTO", 
+            about_p1: "An independent preservation project dedicated to unreleased auditory works. Curated for archival purposes only.", 
+            about_p2: "All media is hosted on third-party servers. We do not claim ownership of these recordings. Respect the artist.",
+            lbl_sync: "LAST UPDATE:", btn_ticket: "[ UPLOAD FILE ]",
+            intro_btn: "ENTER ARCHIVE",
+            player_idle: "READY TO PLAY", vol_label: "VOL", 
+            no_results: "NO RESULTS FOUND",
+            form_alias: "YOUR ALIAS / NAME *", form_msg: "LINK OR MESSAGE *", form_send: "SEND TRANSMISSION",
+            form_sent: "UPLOAD SUCCESSFUL", 
+            form_cd: "PLEASE WAIT BEFORE SENDING AGAIN", 
+            form_sending: "SENDING DATA...", form_error: "TRANSMISSION FAILED",
+            form_ph: "Secure links only (Mega, Dropbox, Drive)...",
+            form_captcha_err: "VERIFICATION FAILED"
         },
         es: {
-            nav_home: "[INICIO]", nav_about: "[ACERCA]", 
-            hero_title: "LA BÓVEDA", hero_subtitle: "/// ARCHIVO DE AUDIO INÉDITO V.3.0",
-            search_prompt: "> BÚSQUEDA:", search_placeholder: "BUSCAR...", 
-            col_track: "NOMBRE PISTA", col_year: "AÑO", col_size: "TAMAÑO", col_action: "CMD",
-            about_title: "/// MANIFIESTO DEL PROYECTO", 
-            about_p1: "SANTUARIO DIGITAL PARA LA PRESERVACIÓN DE ARTEFACTOS AUDITIVOS DE LA ERA OPIUM.", 
-            about_p2: "NO POSEEMOS LOS DERECHOS DE ESTAS GRABACIONES. ESTA ES UNA INICIATIVA DE FANS SIN FINES DE LUCRO.",
-            lbl_sync: "> ULT. SINC:", btn_ticket: "[ ENVIAR TICKET ]",
-            intro_btn: "[ INICIAR SISTEMA ]",
-            player_idle: "SIN SEÑAL ACTIVA", vol_label: "VOL", 
-            no_results: "NO SE ENCONTRARON DATOS...",
-            form_alias: "ALIAS / CÓDIGO *", form_msg: "MENSAJE / ENLACE *", form_send: "[ ENVIAR DATOS ]",
-            form_sent: "/// TRANSMISIÓN ENVIADA ///", 
-            form_cd: "/// ENFRIAMIENTO DE SISTEMA ///",
-            form_sending: "TRANSMITIENDO...", form_error: "> ERROR DEL SISTEMA",
-            form_ph: "PEGAR ENLACES AQUÍ...",
-            form_captcha_err: "> VERIFICACIÓN FALLIDA"
+            nav_home: "ARCHIVO", nav_about: "INFORMACIÓN", 
+            hero_title: "LA BÓVEDA", hero_subtitle: "COLECCIÓN DE AUDIO INÉDITO V.3",
+            search_prompt: "BUSCAR EN BASE DE DATOS", search_placeholder: "Escribe para buscar...", 
+            col_track: "TÍTULO", col_year: "AÑO", col_size: "TAMAÑO", col_action: "REPRODUCIR",
+            about_title: "MANIFIESTO", 
+            about_p1: "Proyecto de preservación independiente dedicado a obras auditivas inéditas. Curado exclusivamente con fines de archivo.", 
+            about_p2: "Todo el contenido está alojado en servidores externos. No reclamamos la propiedad de estas grabaciones. Respetar al artista.",
+            lbl_sync: "ÚLTIMA ACTUALIZACIÓN:", btn_ticket: "[ SUBIR ARCHIVO ]",
+            intro_btn: "ENTRAR AL ARCHIVO",
+            player_idle: "LISTO PARA REPRODUCIR", vol_label: "VOL", 
+            no_results: "NO SE ENCONTRARON RESULTADOS",
+            form_alias: "TU ALIAS / NOMBRE *", form_msg: "ENLACE O MENSAJE *", form_send: "ENVIAR TRANSMISIÓN",
+            form_sent: "CARGA EXITOSA", 
+            form_cd: "ESPERA ANTES DE ENVIAR DE NUEVO",
+            form_sending: "ENVIANDO DATOS...", form_error: "ERROR DE TRANSMISIÓN",
+            form_ph: "Solo enlaces seguros (Mega, Dropbox, Drive)...",
+            form_captcha_err: "VERIFICACIÓN FALLIDA"
         }
     };
 
+    // --- REFERENCIAS DOM ---
     const els = {
         audio: document.getElementById('audioElement'),
         trackList: document.getElementById('trackList'),
@@ -96,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent: document.getElementById('mainContent')
     };
 
+    // --- UTILIDADES ---
     const debounce = (func, wait) => {
         let timeout;
         return function executedFunction(...args) {
@@ -108,16 +155,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseFilename(filename) {
         let raw = filename.replace(/\.(mp3|wav|m4a|flac)$/i, '');
         raw = raw.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+        
         let year = 'N/A';
         const yearMatch = raw.match(/\b(20\d{2}|19\d{2})\b/);
         if (yearMatch) {
             year = yearMatch[0];
             raw = raw.replace(yearMatch[0], '').trim();
         }
+        
         raw = raw.replace(/\(\s*\)|\[\s*\]/g, '').trim();
+        
         let parts = raw.split(/\s-\s|\s-\s/);
         let artist = 'OPIUM ARCHIVE';
         let title = raw;
+        
         if (parts.length >= 2) {
             artist = parts[0].trim();
             title = parts.slice(1).join(' ').trim();
@@ -156,34 +207,43 @@ document.addEventListener('DOMContentLoaded', () => {
             
             setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         } catch (error) {
-            console.error("Download failed, opening fallback:", error);
+            console.error("Download fallback triggered");
             window.open(url, '_blank');
         }
     }
 
+    // --- CARGA DE DATOS ---
     async function loadData() {
         const cachedRaw = localStorage.getItem(STORAGE_KEY_CACHE);
-        
+        let validCache = false;
+
+        // 1. Intentar caché
         if (cachedRaw) {
             try {
                 const { timestamp, data } = JSON.parse(cachedRaw);
+                // Si el caché tiene menos de 1 hora, usarlo
                 if (Date.now() - timestamp < CACHE_DURATION) {
                     state.tracks = data;
                     renderTracks();
-                    updateStatus("ONLINE // SECURE_CACHE");
+                    updateStatus("SYSTEM ONLINE");
                     return; 
                 }
+                state.tracks = data; 
+                validCache = true;
             } catch(e) {
                 localStorage.removeItem(STORAGE_KEY_CACHE);
             }
         }
 
+        updateStatus("SYNCING DATABASE...");
+
         try {
+            // 2. Intentar API
             const res = await fetch('https://api.github.com/repos/dxdnidknow/opium-archive-vault/contents/contents/leaks');
             
             if (!res.ok) {
-                if(res.status === 403) throw new Error("API RATE LIMIT EXCEEDED");
-                throw new Error(`REPO ACCESS DENIED (${res.status})`);
+                if(res.status === 403) throw new Error("RATE LIMIT EXCEEDED");
+                throw new Error(`ACCESS DENIED (${res.status})`);
             }
             
             const files = await res.json();
@@ -194,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 files.forEach(file => {
                     if (file.name.match(/\.(mp3|wav|m4a|flac)$/i)) {
                         const meta = parseFilename(file.name);
-                        const audioUrl = `https://dxdnidknow.github.io/opium-archive-vault/contents/leaks/${encodeURIComponent(file.name)}`;
+                        const audioUrl = `https://raw.githubusercontent.com/dxdnidknow/opium-archive-vault/main/contents/leaks/${encodeURIComponent(file.name)}`;
 
                         tracks.push({
                             id: trackId++,
@@ -213,17 +273,17 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify({ timestamp: Date.now(), data: tracks }));
             
             renderTracks();
-            updateStatus("ONLINE // GITHUB_LINK");
+            updateStatus("SYSTEM ONLINE");
 
         } catch (e) {
-            if (cachedRaw) {
-                const { data } = JSON.parse(cachedRaw);
-                state.tracks = data;
+            // 3. Fallback a caché antiguo si falla la API
+            if (validCache) {
+                console.warn("API Error, using cached data.");
                 renderTracks();
-                updateStatus("OFFLINE // CACHE_FALLBACK");
+                updateStatus("OFFLINE MODE");
             } else {
-                updateStatus(`OFFLINE // ${e.message}`);
-                if(els.trackList) els.trackList.innerHTML = `<li style="padding:20px; color:#ff0000; border:1px solid red; font-family:monospace;">> CRITICAL ERROR: ${e.message}</li>`;
+                updateStatus(`ERROR: ${e.message}`);
+                if(els.trackList) els.trackList.innerHTML = `<li style="padding:20px; color:#ff0000; font-family:monospace; border:1px solid #333;">CONNECTION FAILED: ${e.message}</li>`;
             }
         }
     }
@@ -233,14 +293,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if(el) el.innerHTML = `<span class="beacon"></span>${msg}`;
     }
 
+    // --- RENDERIZADO ---
     function renderTracks(query = '') {
         if (!els.trackList) return;
         els.trackList.innerHTML = '';
         const q = query.toLowerCase();
+        
         const filtered = state.tracks.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q));
 
         if (filtered.length === 0) {
-            els.trackList.innerHTML = `<li style="padding:20px; color:#555;">${translations[state.lang].no_results}</li>`;
+            els.trackList.innerHTML = `<li style="padding:20px; color:#555; font-style:italic;">${translations[state.lang].no_results}</li>`;
             return;
         }
 
@@ -251,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `track-item hover-trigger ${isActive ? 'active-track' : ''}`;
             
+            // ID
             const divId = document.createElement('div');
             divId.className = 't-id';
             if (isActive) {
@@ -263,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             li.appendChild(divId);
 
+            // Info
             const divInfo = document.createElement('div');
             divInfo.className = 't-info';
             const spanTitle = document.createElement('span');
@@ -275,15 +339,18 @@ document.addEventListener('DOMContentLoaded', () => {
             divInfo.appendChild(spanArtist);
             li.appendChild(divInfo);
 
+            // Metadata
             const divYear = document.createElement('div');
             divYear.className = 't-meta hide-mobile';
             divYear.textContent = track.year;
             li.appendChild(divYear);
+
             const divSize = document.createElement('div');
             divSize.className = 't-meta hide-mobile';
             divSize.textContent = track.size;
             li.appendChild(divSize);
 
+            // Acciones
             const divActions = document.createElement('div');
             divActions.className = 'col-actions';
             
@@ -294,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const btnDown = document.createElement('button');
             btnDown.className = 'icon-btn download-trigger';
-            btnDown.textContent = '↓';
+            btnDown.innerHTML = '&darr;'; 
             btnDown.onclick = (e) => {
                 e.stopPropagation();
                 forceDownload(track.src, track.filename || `${track.artist} - ${track.title}.mp3`);
@@ -309,8 +376,10 @@ document.addEventListener('DOMContentLoaded', () => {
         els.trackList.appendChild(frag);
     }
 
+    // --- REPRODUCTOR ---
     async function loadTrack(index) {
         if (state.tracks.length === 0) return;
+        
         if (index >= state.tracks.length) index = 0;
         if (index < 0) index = state.tracks.length - 1; 
         
@@ -336,7 +405,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatePlayBtn(true);
                     updateMediaSession(track);
                 })
-                .catch(() => { state.isPlaying = false; updatePlayBtn(false); });
+                .catch((err) => { 
+                    state.isPlaying = false; 
+                    updatePlayBtn(false); 
+                });
             }
         } catch (err) {}
     }
@@ -348,15 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 artist: track.artist,
                 album: "THE VAULT ARCHIVE",
                 artwork: [
-        { src: COVER_ART_URL, sizes: '96x96',   type: 'image/jpeg' }, 
-        { src: COVER_ART_URL, sizes: '128x128', type: 'image/jpeg' },
-        { src: COVER_ART_URL, sizes: '192x192', type: 'image/jpeg' },
-        { src: COVER_ART_URL, sizes: '256x256', type: 'image/jpeg' },
-        { src: COVER_ART_URL, sizes: '384x384', type: 'image/jpeg' },
-        { src: COVER_ART_URL, sizes: '512x512', type: 'image/jpeg' },
+                    { src: COVER_ART_URL, sizes: '512x512', type: 'image/jpeg' }
                 ]
             });
-
 
             navigator.mediaSession.setActionHandler('play', togglePlay);
             navigator.mediaSession.setActionHandler('pause', togglePlay);
@@ -371,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
             els.audio.play().then(() => { 
                 state.isPlaying = true; 
                 updatePlayBtn(true); 
-
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
             }).catch(() => { state.isPlaying = false; updatePlayBtn(false); }); 
         } else { 
@@ -387,8 +452,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracks(els.searchInput.value); 
     }
 
+    // --- CONTROLES ---
     document.addEventListener('keydown', (e) => {
+        // Ignorar atajos si el usuario escribe en un input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
         switch(e.code) {
             case 'Space': e.preventDefault(); togglePlay(); break;
             case 'ArrowRight': if (!isNaN(els.audio.duration)) els.audio.currentTime = Math.min(els.audio.duration, els.audio.currentTime + 5); break;
@@ -412,20 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.volSlider.value = state.volume; els.audio.volume = state.volume;
     }
     
-    if (els.volContainer) {
-        els.volContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const step = 0.05;
-            let newVol = els.audio.volume;
-            if (e.deltaY < 0) newVol = Math.min(newVol + step, 1);
-            else newVol = Math.max(newVol - step, 0);
-            els.audio.volume = newVol;
-            if(els.volSlider) els.volSlider.value = newVol;
-            state.volume = newVol;
-            localStorage.setItem(STORAGE_KEY_VOL, newVol);
-        }, { passive: false });
-    }
-
+    // --- SCRUBBING ---
     let isDragging = false;
     els.audio.addEventListener('timeupdate', () => {
         if (!isDragging && !isNaN(els.audio.duration)) {
@@ -435,6 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             els.timeDuration.innerText = formatTime(els.audio.duration);
         }
     });
+    
     const updateScrub = (clientX) => {
         if (isNaN(els.audio.duration)) return;
         const rect = els.progressContainer.getBoundingClientRect();
@@ -444,9 +500,12 @@ document.addEventListener('DOMContentLoaded', () => {
         els.timeCurrent.innerText = formatTime(pos * els.audio.duration);
         return pos * els.audio.duration;
     };
+    
     els.progressContainer.addEventListener('mousedown', (e) => { isDragging = true; updateScrub(e.clientX); });
     document.addEventListener('mousemove', (e) => { if (isDragging) { e.preventDefault(); updateScrub(e.clientX); } });
     document.addEventListener('mouseup', (e) => { if (isDragging) { const t = updateScrub(e.clientX); if(t !== undefined) els.audio.currentTime = t; isDragging = false; } });
+    
+    // Touch events
     els.progressContainer.addEventListener('touchstart', (e) => { isDragging = true; updateScrub(e.touches[0].clientX); }, {passive: false});
     document.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); updateScrub(e.touches[0].clientX); } }, {passive: false});
     document.addEventListener('touchend', (e) => { if (isDragging) { const t = updateScrub(e.changedTouches[0].clientX); if(t !== undefined) els.audio.currentTime = t; isDragging = false; } });
@@ -463,6 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     els.searchInput.addEventListener('input', debounce((e) => { renderTracks(e.target.value); }, 300));
 
+    // --- NAVEGACIÓN ---
     function switchSection(sec) {
         if (sec === 'leaks') {
             els.secLeaks.classList.remove('hidden'); els.secAbout.classList.add('hidden');
@@ -475,6 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.navHome.addEventListener('click', (e) => { e.preventDefault(); switchSection('leaks'); });
     els.navAbout.addEventListener('click', (e) => { e.preventDefault(); switchSection('about'); });
 
+    // --- IDIOMA ---
     function setLang(lang) {
         state.lang = lang;
         localStorage.setItem(STORAGE_KEY_LANG, lang);
@@ -486,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (key === 'player_idle' && state.currentTrackIndex !== -1) {
+                    // No hacer nada si está sonando
                 } else {
                     if (translations[lang][key]) el.innerText = translations[lang][key];
                 }
@@ -504,6 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.langEn.addEventListener('click', () => setLang('en'));
     els.langEs.addEventListener('click', () => setLang('es'));
 
+    // --- MODAL ---
     els.openModalBtn.addEventListener('click', () => { 
         els.modal.classList.remove('hidden');
         setTimeout(() => els.modal.classList.add('open'), 10);
@@ -518,30 +581,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(id);
         const st = document.getElementById(id === 'alias' ? 'aliasStatus' : 'msgStatus');
         if(el && st) el.addEventListener('input', () => { 
-            st.innerText = `> LEN: ${el.value.length}`; 
+            st.innerText = `LENGTH: ${el.value.length}`; 
             if(el.value.length < el.minLength) st.classList.add('invalid'); else st.classList.remove('invalid');
         });
     });
 
     els.ticketForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if(!grecaptcha.getResponse()) { els.formStatus.innerText = translations[state.lang].form_captcha_err; return; }
+        if(typeof grecaptcha !== 'undefined' && !grecaptcha.getResponse()) { 
+            els.formStatus.innerText = translations[state.lang].form_captcha_err; return; 
+        }
+        
         els.ticketSubmitBtn.disabled = true;
+        els.formStatus.innerText = translations[state.lang].form_sending;
+
         try {
-            const res = await fetch(els.ticketForm.action, { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(els.ticketForm).entries())), headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } });
-            if(res.ok) { localStorage.setItem(STORAGE_KEY_COOLDOWN, Date.now()); els.ticketForm.style.display = 'none'; els.successView.style.display = 'flex'; grecaptcha.reset(); setTimeout(() => { els.modal.classList.remove('open'); setTimeout(() => els.modal.classList.add('hidden'), 300); }, 2500); }
-            else { els.formStatus.innerText = "ERROR"; els.ticketSubmitBtn.disabled = false; grecaptcha.reset(); }
-        } catch(err) { els.formStatus.innerText = "NET ERROR"; els.ticketSubmitBtn.disabled = false; grecaptcha.reset(); }
+            const res = await fetch(els.ticketForm.action, { 
+                method: 'POST', 
+                body: JSON.stringify(Object.fromEntries(new FormData(els.ticketForm).entries())), 
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } 
+            });
+            
+            if(res.ok) { 
+                localStorage.setItem(STORAGE_KEY_COOLDOWN, Date.now()); 
+                els.ticketForm.style.display = 'none'; 
+                els.successView.style.display = 'flex'; 
+                if(typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
+                setTimeout(() => { 
+                    els.modal.classList.remove('open'); 
+                    setTimeout(() => els.modal.classList.add('hidden'), 300); 
+                }, 2500); 
+            } else { 
+                els.formStatus.innerText = translations[state.lang].form_error; 
+                els.ticketSubmitBtn.disabled = false; 
+                if(typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
+            }
+        } catch(err) { 
+            els.formStatus.innerText = "NETWORK ERROR"; 
+            els.ticketSubmitBtn.disabled = false; 
+            if(typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
+        }
     });
 
+    // --- ENTRADA (SPLASH) ---
     els.enterArchiveBtn.addEventListener('click', () => {
         els.splashScreen.style.opacity = '0';
         setTimeout(() => els.splashScreen.classList.add('hidden'), 500);
         els.mainContent.classList.remove('hidden');
-        els.audio.src = SILENT_AUDIO; els.audio.play().catch(() => {});
+        
+        els.audio.src = SILENT_AUDIO; 
+        els.audio.play().catch(() => {});
+        
         loadData();
     });
 
+    // RELOJ
     setInterval(() => { if(els.sysClock) els.sysClock.innerText = new Date().toISOString().replace('T', ' ').split('.')[0] + " UTC"; }, 1000);
+    
+    // INICIO
     setLang(state.lang);
+
+    // --- TÍTULO INTERACTIVO ---
+    const originalTitle = document.title;
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            document.title = "WAITING...";
+        } else {
+            document.title = originalTitle;
+        }
+    });
 });
